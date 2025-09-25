@@ -1,8 +1,15 @@
+# Build artifacts
 bin/
 obj/
+
+# Visual Studio cache
 .vs/
 *.user
 *.suo
-*.db
-appsettings.Development.json
-.env
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Merge conflicts
+*.orig
