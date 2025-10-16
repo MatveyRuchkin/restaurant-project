@@ -34,7 +34,7 @@ namespace RestaurantAPI.Controllers
 
         // GET: api/Roles/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<RoleReadDto>> GetRole(int id)
+        public async Task<ActionResult<RoleReadDto>> GetRole(Guid id)
         {
             var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
 
@@ -77,7 +77,7 @@ namespace RestaurantAPI.Controllers
 
         // PUT: api/Roles/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRole(int id, RoleUpdateDto updateDto)
+        public async Task<IActionResult> UpdateRole(Guid id, RoleUpdateDto updateDto)
         {
             var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
             if (role == null)
@@ -96,7 +96,7 @@ namespace RestaurantAPI.Controllers
 
         // DELETE: api/Roles/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRole(int id)
+        public async Task<IActionResult> DeleteRole(Guid id)
         {
             var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
             if (role == null)

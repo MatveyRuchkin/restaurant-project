@@ -16,7 +16,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // ===== Настройка JWT-аутентификации =====
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "K1a5i0s8e0r5k2a0y0a5oMlOeTsYyAaGODBLESSAMERICA";
+var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "RestaurantAPI";
 
 builder.Services.AddAuthentication(options =>

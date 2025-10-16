@@ -35,7 +35,8 @@ namespace RestaurantAPI.Controllers
             var hashedPassword = HashPassword(dto.Password);
 
             // Назначаем роль с Id = 2
-            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == 2);
+            var roleId = new Guid("fbad3dc0-36b4-4efa-8541-fd723c3e518b"); //waiter
+            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
             if (role == null)
                 return BadRequest("Роль с Id = 2 не найдена");
 
@@ -90,7 +91,7 @@ namespace RestaurantAPI.Controllers
 
         private string GenerateJwtToken(User user)
         {
-            var jwtKey = _config["Jwt:Key"] ?? "K1a5i0s8e0r5k2a0y0a5oMlOeTsYyAaGODBLESSAMERICA";
+            var jwtKey = _config["Jwt:Key"];
             var jwtIssuer = _config["Jwt:Issuer"] ?? "RestaurantAPI";
 
             var claims = new[]

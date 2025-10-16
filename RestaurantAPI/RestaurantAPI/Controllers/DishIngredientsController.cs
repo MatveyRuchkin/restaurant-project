@@ -40,7 +40,7 @@ namespace RestaurantAPI.Controllers
 
         // GET: api/DishIngredients/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<DishIngredientReadDto>> GetDishIngredient(int id)
+        public async Task<ActionResult<DishIngredientReadDto>> GetDishIngredient(Guid id)
         {
             var di = await _context.DishIngredients
                 .Include(x => x.Dish)
@@ -105,7 +105,7 @@ namespace RestaurantAPI.Controllers
 
         // PUT: api/DishIngredients/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDishIngredient(int id, DishIngredientUpdateDto updateDto)
+        public async Task<IActionResult> UpdateDishIngredient(Guid id, DishIngredientUpdateDto updateDto)
         {
             var dishIngredient = await _context.DishIngredients
                 .Include(di => di.Ingredient)
@@ -133,7 +133,7 @@ namespace RestaurantAPI.Controllers
 
         // DELETE: api/DishIngredients/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDishIngredient(int id)
+        public async Task<IActionResult> DeleteDishIngredient(Guid id)
         {
             var dishIngredient = await _context.DishIngredients
                 .Include(di => di.Ingredient)

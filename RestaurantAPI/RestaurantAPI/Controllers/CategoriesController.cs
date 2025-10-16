@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
 using RestaurantAPI.Models;
@@ -35,7 +36,7 @@ namespace RestaurantAPI.Controllers
 
         // GET: api/Categories/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<CategoryReadDto>> GetCategory(int id)
+        public async Task<ActionResult<CategoryReadDto>> GetCategory(Guid id)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             if (category == null)
@@ -80,7 +81,7 @@ namespace RestaurantAPI.Controllers
 
         // PUT: api/Categories/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, CategoryUpdateDto updateDto)
+        public async Task<IActionResult> UpdateCategory(Guid id, CategoryUpdateDto updateDto)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             if (category == null)
@@ -100,7 +101,7 @@ namespace RestaurantAPI.Controllers
 
         // DELETE: api/Categories/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCategory(int id)
+        public async Task<IActionResult> DeleteCategory(Guid id)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             if (category == null)

@@ -5,13 +5,13 @@ namespace RestaurantAPI.Models;
 
 public partial class User
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     public string Username { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
 
-    public int RoleId { get; set; }
+    public Guid RoleId { get; set; }
 
     public string? CreatedBy { get; set; }
 

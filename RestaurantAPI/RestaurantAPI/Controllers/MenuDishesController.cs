@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
 using RestaurantAPI.Models;
@@ -39,7 +40,7 @@ namespace RestaurantAPI.Controllers
 
         // GET: api/MenuDishes/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<MenuDishReadDto>> GetMenuDish(int id)
+        public async Task<ActionResult<MenuDishReadDto>> GetMenuDish(Guid id)
         {
             var menuDish = await _context.MenuDishes
                 .Include(md => md.Menu)
@@ -100,7 +101,7 @@ namespace RestaurantAPI.Controllers
 
         // PUT: api/MenuDishes/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMenuDish(int id, MenuDishUpdateDto updateDto)
+        public async Task<IActionResult> UpdateMenuDish(Guid id, MenuDishUpdateDto updateDto)
         {
             var menuDish = await _context.MenuDishes.FirstOrDefaultAsync(md => md.Id == id && !md.IsDeleted);
             if (menuDish == null)
@@ -128,7 +129,7 @@ namespace RestaurantAPI.Controllers
 
         // DELETE: api/MenuDishes/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMenuDish(int id)
+        public async Task<IActionResult> DeleteMenuDish(Guid id)
         {
             var menuDish = await _context.MenuDishes.FirstOrDefaultAsync(md => md.Id == id && !md.IsDeleted);
             if (menuDish == null)

@@ -38,7 +38,7 @@ namespace RestaurantAPI.Controllers
 
         // GET: api/Orders/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<OrderReadDto>> GetOrder(int id)
+        public async Task<ActionResult<OrderReadDto>> GetOrder(Guid id)
         {
             var order = await _context.Orders
                 .Include(o => o.User)
@@ -119,7 +119,7 @@ namespace RestaurantAPI.Controllers
 
         // PUT: api/Orders/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateOrder(int id, OrderUpdateDto updateDto)
+        public async Task<IActionResult> UpdateOrder(Guid id, OrderUpdateDto updateDto)
         {
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
             if (order == null)
@@ -138,7 +138,7 @@ namespace RestaurantAPI.Controllers
 
         // DELETE: api/Orders/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrder(int id)
+        public async Task<IActionResult> DeleteOrder(Guid id)
         {
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
             if (order == null)

@@ -5,11 +5,11 @@ namespace RestaurantAPI.Models;
 
 public partial class DishIngredient
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int DishId { get; set; }
+    public Guid DishId { get; set; }
 
-    public int IngredientId { get; set; }
+    public Guid IngredientId { get; set; }
 
     public string? Quantity { get; set; }
 

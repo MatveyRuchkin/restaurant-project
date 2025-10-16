@@ -5,15 +5,15 @@ namespace RestaurantAPI.Models;
 
 public partial class Log
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
-    public int? UserId { get; set; }
+    public Guid? UserId { get; set; }
 
     public string Action { get; set; } = null!;
 
     public string TableName { get; set; } = null!;
 
-    public int? RecordId { get; set; }
+    public Guid? RecordId { get; set; }
 
     public string? Details { get; set; }
 

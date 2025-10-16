@@ -36,7 +36,7 @@ namespace RestaurantAPI.Controllers
 
         // GET: api/JwtTokens/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<JwtTokenReadDto>> GetToken(int id)
+        public async Task<ActionResult<JwtTokenReadDto>> GetToken(Guid id)
         {
             var token = await _context.JwtTokens
                 .Include(t => t.User)
@@ -58,7 +58,7 @@ namespace RestaurantAPI.Controllers
 
         // PUT: api/JwtTokens/revoke/5
         [HttpPut("revoke/{id}")]
-        public async Task<IActionResult> RevokeToken(int id)
+        public async Task<IActionResult> RevokeToken(Guid id)
         {
             var token = await _context.JwtTokens.FirstOrDefaultAsync(t => t.Id == id);
             if (token == null)

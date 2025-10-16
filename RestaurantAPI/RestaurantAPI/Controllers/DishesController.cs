@@ -38,7 +38,7 @@ namespace RestaurantAPI.Controllers
 
         // GET: api/Dishes/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<DishReadDto>> GetDish(int id)
+        public async Task<ActionResult<DishReadDto>> GetDish(Guid id)
         {
             var dish = await _context.Dishes
                 .Include(d => d.Category)
@@ -97,7 +97,7 @@ namespace RestaurantAPI.Controllers
 
         // PUT: api/Dishes/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDish(int id, DishUpdateDto updateDto)
+        public async Task<IActionResult> UpdateDish(Guid id, DishUpdateDto updateDto)
         {
             var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
             if (dish == null)
@@ -123,7 +123,7 @@ namespace RestaurantAPI.Controllers
 
         // DELETE: api/Dishes/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDish(int id)
+        public async Task<IActionResult> DeleteDish(Guid id)
         {
             var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
             if (dish == null)

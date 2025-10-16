@@ -2,8 +2,8 @@
 {
     public class OrderItemReadDto
     {
-        public int Id { get; set; }
-        public int DishId { get; set; }
+        public Guid Id { get; set; }
+        public Guid DishId { get; set; }
         public string DishName { get; set; } = null!;
         public int Quantity { get; set; }
         public decimal Price { get; set; }
@@ -11,7 +11,7 @@
 
     public class OrderItemCreateDto
     {
-        public int DishId { get; set; }
+        public Guid DishId { get; set; }
         public int Quantity { get; set; }
     }
 

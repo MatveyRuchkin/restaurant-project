@@ -2,7 +2,7 @@
 {
     public class OrderReadDto
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string Username { get; set; } = null!;
         public DateTime OrderDate { get; set; }
         public string Status { get; set; } = null!;
@@ -11,7 +11,7 @@
 
     public class OrderCreateDto
     {
-        public int UserId { get; set; }
+        public Guid UserId { get; set; }
         public List<OrderItemCreateDto> Items { get; set; } = new();
     }
 

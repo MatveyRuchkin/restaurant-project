@@ -34,7 +34,7 @@ namespace RestaurantAPI.Controllers
 
         // GET: api/Ingredients/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<IngredientReadDto>> GetIngredient(int id)
+        public async Task<ActionResult<IngredientReadDto>> GetIngredient(Guid id)
         {
             var ingredient = await _context.Ingredients
                 .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
@@ -78,7 +78,7 @@ namespace RestaurantAPI.Controllers
 
         // PUT: api/Ingredients/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateIngredient(int id, IngredientUpdateDto updateDto)
+        public async Task<IActionResult> UpdateIngredient(Guid id, IngredientUpdateDto updateDto)
         {
             var ingredient = await _context.Ingredients
                 .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
@@ -99,7 +99,7 @@ namespace RestaurantAPI.Controllers
 
         // DELETE: api/Ingredients/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteIngredient(int id)
+        public async Task<IActionResult> DeleteIngredient(Guid id)
         {
             var ingredient = await _context.Ingredients
                 .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
