@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.Models;
 using RestaurantAPI.DTOs;
@@ -10,21 +11,117 @@ namespace RestaurantAPI.Controllers
     public class DishIngredientsController : ControllerBase
     {
         private readonly RestaurantDbContext _context;
+        private readonly ILogger<DishIngredientsController> _logger;
 
-        public DishIngredientsController(RestaurantDbContext context)
+        public DishIngredientsController(RestaurantDbContext context, ILogger<DishIngredientsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
-        // GET: api/DishIngredients
+        // GET: api/DishIngredients - доступно всем авторизованным
+        // Поддерживает фильтрацию, сортировку и пагинацию
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<DishIngredientReadDto>>> GetDishIngredients()
+        [Authorize]
+        public async Task<ActionResult> GetDishIngredients(
+            Guid? dishId = null,
+            Guid? ingredientId = null,
+            string sortBy = "dishname",
+            string order = "asc",
+            int page = 1,
+            int pageSize = 20)
         {
-            var dishIngredients = await _context.DishIngredients
-                .Include(di => di.Dish)
-                .Include(di => di.Ingredient)
-                .Where(di => !di.IsDeleted)
-                .Select(di => new DishIngredientReadDto
+            try
+            {
+                var query = _context.DishIngredients
+                    .Include(di => di.Dish)
+                    .Include(di => di.Ingredient)
+                    .Where(di => !di.IsDeleted);
+
+                // Фильтрация по блюду
+                if (dishId.HasValue)
+                {
+                    query = query.Where(di => di.DishId == dishId.Value);
+                }
+
+                // Фильтрация по ингредиенту
+                if (ingredientId.HasValue)
+                {
+                    query = query.Where(di => di.IngredientId == ingredientId.Value);
+                }
+
+                // Сортировка
+                query = sortBy.ToLower() switch
+                {
+                    "dishname" => order.ToLower() == "desc"
+                        ? query.OrderByDescending(di => di.Dish.Name)
+                        : query.OrderBy(di => di.Dish.Name),
+                    "ingredientname" => order.ToLower() == "desc"
+                        ? query.OrderByDescending(di => di.Ingredient.Name)
+                        : query.OrderBy(di => di.Ingredient.Name),
+                    "quantity" => order.ToLower() == "desc"
+                        ? query.OrderByDescending(di => di.Quantity)
+                        : query.OrderBy(di => di.Quantity),
+                    _ => query.OrderBy(di => di.Dish.Name)
+                };
+
+                // Подсчет общего количества
+                var totalCount = await query.CountAsync();
+
+                // Пагинация
+                var dishIngredients = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(di => new DishIngredientReadDto
+                    {
+                        Id = di.Id,
+                        DishId = di.DishId,
+                        DishName = di.Dish.Name,
+                        IngredientId = di.IngredientId,
+                        IngredientName = di.Ingredient.Name,
+                        Quantity = di.Quantity
+                    })
+                    .ToListAsync();
+
+                _logger.LogInformation(
+                    "Получен список ингредиентов блюд. Количество: {Count}, Всего: {Total}, Страница: {Page}",
+                    dishIngredients.Count, totalCount, page);
+
+                return Ok(new
+                {
+                    data = dishIngredients,
+                    totalCount = totalCount,
+                    page = page,
+                    pageSize = pageSize,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении списка ингредиентов блюд");
+                return StatusCode(500, "Произошла ошибка при получении списка ингредиентов блюд.");
+            }
+        }
+
+        // GET: api/DishIngredients/5 - доступно всем авторизованным
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<ActionResult<DishIngredientReadDto>> GetDishIngredient(Guid id)
+        {
+            try
+            {
+                var di = await _context.DishIngredients
+                    .Include(x => x.Dish)
+                    .Include(x => x.Ingredient)
+                    .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+
+                if (di == null)
+                {
+                    _logger.LogWarning("Ингредиент блюда с Id {DishIngredientId} не найден", id);
+                    return NotFound();
+                }
+
+                var dto = new DishIngredientReadDto
                 {
                     Id = di.Id,
                     DishId = di.DishId,
@@ -32,125 +129,167 @@ namespace RestaurantAPI.Controllers
                     IngredientId = di.IngredientId,
                     IngredientName = di.Ingredient.Name,
                     Quantity = di.Quantity
-                })
-                .ToListAsync();
+                };
 
-            return Ok(dishIngredients);
-        }
-
-        // GET: api/DishIngredients/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<DishIngredientReadDto>> GetDishIngredient(Guid id)
-        {
-            var di = await _context.DishIngredients
-                .Include(x => x.Dish)
-                .Include(x => x.Ingredient)
-                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
-
-            if (di == null)
-                return NotFound();
-
-            var dto = new DishIngredientReadDto
+                return Ok(dto);
+            }
+            catch (Exception ex)
             {
-                Id = di.Id,
-                DishId = di.DishId,
-                DishName = di.Dish.Name,
-                IngredientId = di.IngredientId,
-                IngredientName = di.Ingredient.Name,
-                Quantity = di.Quantity
-            };
-
-            return Ok(dto);
+                _logger.LogError(ex, "Ошибка при получении ингредиента блюда {DishIngredientId}", id);
+                return StatusCode(500, "Произошла ошибка при получении ингредиента блюда.");
+            }
         }
 
-        // POST: api/DishIngredients
+        // POST: api/DishIngredients - только админ
         [HttpPost]
+        [Authorize(Policy = "Admin")]
         public async Task<ActionResult<DishIngredientReadDto>> CreateDishIngredient(DishIngredientCreateDto createDto)
         {
-            var username = User?.Identity?.Name ?? "System";
-
-            // проверяем наличие блюда и ингредиента
-            var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == createDto.DishId && !d.IsDeleted);
-            if (dish == null)
-                return BadRequest("Dish not found.");
-
-            var ingredient = await _context.Ingredients.FirstOrDefaultAsync(i => i.Id == createDto.IngredientId && !i.IsDeleted);
-            if (ingredient == null)
-                return BadRequest("Ingredient not found.");
-
-            var dishIngredient = new DishIngredient
+            try
             {
-                DishId = createDto.DishId,
-                IngredientId = createDto.IngredientId,
-                Quantity = createDto.Quantity,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = username
-            };
+                var username = User?.Identity?.Name ?? "System";
 
-            _context.DishIngredients.Add(dishIngredient);
-            await _context.SaveChangesAsync();
+                // Проверка на дубликат
+                if (await _context.DishIngredients.AnyAsync(di =>
+                    di.DishId == createDto.DishId &&
+                    di.IngredientId == createDto.IngredientId &&
+                    !di.IsDeleted))
+                {
+                    _logger.LogWarning("Попытка создания дубликата ингредиента блюда. DishId: {DishId}, IngredientId: {IngredientId}",
+                        createDto.DishId, createDto.IngredientId);
+                    return BadRequest("Этот ингредиент уже добавлен к данному блюду.");
+                }
 
-            var readDto = new DishIngredientReadDto
+                var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == createDto.DishId && !d.IsDeleted);
+                if (dish == null)
+                {
+                    _logger.LogWarning("Попытка создания ингредиента блюда с несуществующим блюдом: {DishId}", createDto.DishId);
+                    return BadRequest("Блюдо не найдено.");
+                }
+
+                var ingredient = await _context.Ingredients.FirstOrDefaultAsync(i => i.Id == createDto.IngredientId && !i.IsDeleted);
+                if (ingredient == null)
+                {
+                    _logger.LogWarning("Попытка создания ингредиента блюда с несуществующим ингредиентом: {IngredientId}", createDto.IngredientId);
+                    return BadRequest("Ингредиент не найден.");
+                }
+
+                var dishIngredient = new DishIngredient
+                {
+                    DishId = createDto.DishId,
+                    IngredientId = createDto.IngredientId,
+                    Quantity = createDto.Quantity,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = username
+                };
+
+                _context.DishIngredients.Add(dishIngredient);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Ингредиент {IngredientName} добавлен к блюду {DishName} администратором {Username}",
+                    ingredient.Name, dish.Name, username);
+
+                var readDto = new DishIngredientReadDto
+                {
+                    Id = dishIngredient.Id,
+                    DishId = dish.Id,
+                    DishName = dish.Name,
+                    IngredientId = ingredient.Id,
+                    IngredientName = ingredient.Name,
+                    Quantity = dishIngredient.Quantity
+                };
+
+                return CreatedAtAction(nameof(GetDishIngredient), new { id = dishIngredient.Id }, readDto);
+            }
+            catch (Exception ex)
             {
-                Id = dishIngredient.Id,
-                DishId = dish.Id,
-                DishName = dish.Name,
-                IngredientId = ingredient.Id,
-                IngredientName = ingredient.Name,
-                Quantity = dishIngredient.Quantity
-            };
-
-            return CreatedAtAction(nameof(GetDishIngredient), new { id = dishIngredient.Id }, readDto);
+                _logger.LogError(ex, "Ошибка при создании ингредиента блюда");
+                return StatusCode(500, "Произошла ошибка при создании ингредиента блюда.");
+            }
         }
 
-        // PUT: api/DishIngredients/5
+        // PUT: api/DishIngredients/5 - только админ
         [HttpPut("{id}")]
+        [Authorize(Policy = "Admin")]
         public async Task<IActionResult> UpdateDishIngredient(Guid id, DishIngredientUpdateDto updateDto)
         {
-            var dishIngredient = await _context.DishIngredients
-                .Include(di => di.Ingredient)
-                .Include(di => di.Dish)
-                .FirstOrDefaultAsync(di => di.Id == id && !di.IsDeleted);
+            try
+            {
+                var dishIngredient = await _context.DishIngredients
+                    .Include(di => di.Ingredient)
+                    .Include(di => di.Dish)
+                    .FirstOrDefaultAsync(di => di.Id == id && !di.IsDeleted);
 
-            if (dishIngredient == null)
-                return NotFound();
+                if (dishIngredient == null)
+                {
+                    _logger.LogWarning("Попытка обновления несуществующего ингредиента блюда: {DishIngredientId}", id);
+                    return NotFound();
+                }
 
-            var username = User?.Identity?.Name ?? "System";
+                var username = User?.Identity?.Name ?? "System";
 
-            // проверим, что новый ингредиент существует
-            var ingredient = await _context.Ingredients.FirstOrDefaultAsync(i => i.Id == updateDto.IngredientId && !i.IsDeleted);
-            if (ingredient == null)
-                return BadRequest("Ingredient not found.");
+                var ingredient = await _context.Ingredients.FirstOrDefaultAsync(i => i.Id == updateDto.IngredientId && !i.IsDeleted);
+                if (ingredient == null)
+                {
+                    _logger.LogWarning("Попытка обновления ингредиента блюда {DishIngredientId} с несуществующим ингредиентом: {IngredientId}",
+                        id, updateDto.IngredientId);
+                    return BadRequest("Ингредиент не найден.");
+                }
 
-            dishIngredient.IngredientId = updateDto.IngredientId;
-            dishIngredient.Quantity = updateDto.Quantity;
-            dishIngredient.UpdatedAt = DateTime.UtcNow;
-            dishIngredient.UpdatedBy = username;
+                dishIngredient.IngredientId = updateDto.IngredientId;
+                dishIngredient.Quantity = updateDto.Quantity;
+                dishIngredient.UpdatedAt = DateTime.UtcNow;
+                dishIngredient.UpdatedBy = username;
 
-            await _context.SaveChangesAsync();
-            return NoContent();
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Ингредиент блюда {DishIngredientId} обновлен администратором {Username}", id, username);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при обновлении ингредиента блюда {DishIngredientId}", id);
+                return StatusCode(500, "Произошла ошибка при обновлении ингредиента блюда.");
+            }
         }
 
-        // DELETE: api/DishIngredients/5
+        // DELETE: api/DishIngredients/5 - только админ
         [HttpDelete("{id}")]
+        [Authorize(Policy = "Admin")]
         public async Task<IActionResult> DeleteDishIngredient(Guid id)
         {
-            var dishIngredient = await _context.DishIngredients
-                .Include(di => di.Ingredient)
-                .Include(di => di.Dish)
-                .FirstOrDefaultAsync(di => di.Id == id && !di.IsDeleted);
+            try
+            {
+                var dishIngredient = await _context.DishIngredients
+                    .Include(di => di.Ingredient)
+                    .Include(di => di.Dish)
+                    .FirstOrDefaultAsync(di => di.Id == id && !di.IsDeleted);
 
-            if (dishIngredient == null)
-                return NotFound();
+                if (dishIngredient == null)
+                {
+                    _logger.LogWarning("Попытка удаления несуществующего ингредиента блюда: {DishIngredientId}", id);
+                    return NotFound();
+                }
 
-            var username = User?.Identity?.Name ?? "System";
+                var username = User?.Identity?.Name ?? "System";
 
-            dishIngredient.IsDeleted = true;
-            dishIngredient.DeletedAt = DateTime.UtcNow;
-            dishIngredient.DeletedBy = username;
+                dishIngredient.IsDeleted = true;
+                dishIngredient.DeletedAt = DateTime.UtcNow;
+                dishIngredient.DeletedBy = username;
 
-            await _context.SaveChangesAsync();
-            return NoContent();
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Ингредиент {IngredientName} удален из блюда {DishName} администратором {Username}",
+                    dishIngredient.Ingredient.Name, dishIngredient.Dish.Name, username);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при удалении ингредиента блюда {DishIngredientId}", id);
+                return StatusCode(500, "Произошла ошибка при удалении ингредиента блюда.");
+            }
         }
     }
 }

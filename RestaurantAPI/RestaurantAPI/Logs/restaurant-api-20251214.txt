@@ -1,0 +1,37 @@
+[2025-12-14 18:45:42.826] [INF] [] Запуск приложения Restaurant API
+[2025-12-14 18:45:43.028] [INF] [] Приложение Restaurant API успешно запущено
+[2025-12-14 18:45:43.049] [INF] [Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager] User profile is available. Using 'C:\Users\motya\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+[2025-12-14 18:45:43.134] [INF] [Microsoft.Hosting.Lifetime] Now listening on: https://localhost:7188
+[2025-12-14 18:45:43.136] [INF] [Microsoft.Hosting.Lifetime] Now listening on: http://localhost:5143
+[2025-12-14 18:45:43.214] [INF] [Microsoft.Hosting.Lifetime] Application started. Press Ctrl+C to shut down.
+[2025-12-14 18:45:43.216] [INF] [Microsoft.Hosting.Lifetime] Hosting environment: Development
+[2025-12-14 18:45:43.217] [INF] [Microsoft.Hosting.Lifetime] Content root path: D:\restaurant-project\RestaurantAPI\RestaurantApi
+[2025-12-14 18:45:43.856] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/swagger/index.html - null null
+[2025-12-14 18:45:44.097] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/swagger/index.html - 200 null text/html;charset=utf-8 243.9687ms
+[2025-12-14 18:45:44.126] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/_framework/aspnetcore-browser-refresh.js - null null
+[2025-12-14 18:45:44.126] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/_vs/browserLink - null null
+[2025-12-14 18:45:44.134] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/_framework/aspnetcore-browser-refresh.js - 200 16511 application/javascript; charset=utf-8 7.8796ms
+[2025-12-14 18:45:44.159] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/_vs/browserLink - 200 null text/javascript; charset=UTF-8 33.5986ms
+[2025-12-14 18:45:44.205] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/swagger/v1/swagger.json - null null
+[2025-12-14 18:45:44.252] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 46.015ms
+[2025-12-14 18:46:13.894] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 POST https://localhost:7188/api/Auth/login - application/json 56
+[2025-12-14 18:46:13.902] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution failed.
+[2025-12-14 18:46:13.903] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] Request origin https://localhost:7188 does not have permission to access the resource.
+[2025-12-14 18:46:13.942] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.AuthController.Login (RestaurantApi)'
+[2025-12-14 18:46:13.972] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.AuthResponseDto]] Login(RestaurantAPI.DTOs.UserLoginDto) on controller RestaurantAPI.Controllers.AuthController (RestaurantApi).
+[2025-12-14 18:46:15.471] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (45ms) [Parameters=[@__dto_Username_0='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[CreatedBy], [u].[DeletedAt], [u].[DeletedBy], [u].[IsDeleted], [u].[Notes], [u].[PasswordHash], [u].[RoleId], [u].[UpdatedAt], [u].[UpdatedBy], [u].[Username], [r].[Id], [r].[CreatedAt], [r].[CreatedBy], [r].[DeletedAt], [r].[DeletedBy], [r].[IsDeleted], [r].[Name], [r].[Notes], [r].[UpdatedAt], [r].[UpdatedBy]
+FROM [Users] AS [u]
+INNER JOIN [Roles] AS [r] ON [u].[RoleId] = [r].[Id]
+WHERE [u].[Username] = @__dto_Username_0
+[2025-12-14 18:46:16.082] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (12ms) [Parameters=[@p0='?' (DbType = DateTime), @p1='?' (DbType = DateTime), @p2='?' (DbType = Boolean), @p3='?' (DbType = DateTime), @p4='?' (Size = 4000), @p5='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [JwtTokens] ([CreatedAt], [ExpiresAt], [Revoked], [RevokedAt], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+[2025-12-14 18:46:16.102] [INF] [RestaurantAPI.Controllers.AuthController] Пользователь Jefowus1 успешно вошел в систему
+[2025-12-14 18:46:16.108] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing ObjectResult, writing value of type 'RestaurantAPI.DTOs.AuthResponseDto'.
+[2025-12-14 18:46:16.116] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.AuthController.Login (RestaurantApi) in 2139.5354ms
+[2025-12-14 18:46:16.118] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.AuthController.Login (RestaurantApi)'
+[2025-12-14 18:46:16.123] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 POST https://localhost:7188/api/Auth/login - 200 null application/json; charset=utf-8 2228.7252ms

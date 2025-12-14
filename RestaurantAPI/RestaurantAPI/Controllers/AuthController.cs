@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RestaurantAPI.DTOs;
 using RestaurantAPI.Models;
+using RestaurantAPI.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace RestaurantAPI.Controllers
@@ -16,88 +16,124 @@ namespace RestaurantAPI.Controllers
     {
         private readonly RestaurantDbContext _context;
         private readonly IConfiguration _config;
+        private readonly IPasswordService _passwordService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(RestaurantDbContext context, IConfiguration config)
+        public AuthController(
+            RestaurantDbContext context, 
+            IConfiguration config,
+            IPasswordService passwordService,
+            ILogger<AuthController> logger)
         {
             _context = context;
             _config = config;
+            _passwordService = passwordService;
+            _logger = logger;
         }
 
         // POST: api/Auth/register
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserLoginDto dto)
         {
-            // Проверка на существующего пользователя
-            if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
-                return BadRequest("Пользователь уже существует.");
-
-            // Хэширование пароля
-            var hashedPassword = HashPassword(dto.Password);
-
-            // Назначаем роль с Id = 2
-            var roleId = new Guid("fbad3dc0-36b4-4efa-8541-fd723c3e518b"); //waiter
-            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
-            if (role == null)
-                return BadRequest("Роль с Id = 2 не найдена");
-
-            // Создаём пользователя с RoleId = 2
-            var user = new User
+            try
             {
-                Username = dto.Username,
-                PasswordHash = hashedPassword,
-                CreatedAt = DateTime.UtcNow,
-                RoleId = role.Id
-            };
+                if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
+                {
+                    _logger.LogWarning("Попытка регистрации с существующим именем пользователя: {Username}", dto.Username);
+                    return BadRequest("Пользователь уже существует.");
+                }
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+                var hashedPassword = _passwordService.HashPassword(dto.Password);
 
-            return Ok("Пользователь успешно зарегистрирован.");
+                var roleId = new Guid("be81b9ce-fd34-47d4-b9e4-82c0e811a9ab"); 
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
+                if (role == null)
+                {
+                    _logger.LogError("Роль с Id {RoleId} не найдена при регистрации", roleId);
+                    return BadRequest("Роль не найдена");
+                }
+
+                var user = new User
+                {
+                    Username = dto.Username,
+                    PasswordHash = hashedPassword,
+                    CreatedAt = DateTime.UtcNow,
+                    RoleId = role.Id
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Пользователь {Username} успешно зарегистрирован с ролью {RoleName}", 
+                    user.Username, role.Name);
+
+                return Ok("Пользователь успешно зарегистрирован.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при регистрации пользователя {Username}", dto.Username);
+                return StatusCode(500, "Произошла ошибка при регистрации.");
+            }
         }
 
         // POST: api/Auth/login
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponseDto>> Login(UserLoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
-            if (user == null || !VerifyPassword(dto.Password, user.PasswordHash))
-                return Unauthorized("Неверный логин или пароль.");
-
-            // Генерация токена
-            var token = GenerateJwtToken(user);
-            var expiresAt = DateTime.UtcNow.AddHours(2);
-
-            // Сохраняем токен в БД
-            var jwtToken = new JwtToken
+            try
             {
-                UserId = user.Id,
-                Token = token,
-                ExpiresAt = expiresAt,
-                CreatedAt = DateTime.UtcNow,
-                Revoked = false
-            };
+                var user = await _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u => u.Username == dto.Username);
+                
+                if (user == null || !_passwordService.VerifyPassword(dto.Password, user.PasswordHash))
+                {
+                    _logger.LogWarning("Неудачная попытка входа для пользователя: {Username}", dto.Username);
+                    return Unauthorized("Неверный логин или пароль.");
+                }
 
-            _context.JwtTokens.Add(jwtToken);
-            await _context.SaveChangesAsync();
+                var token = GenerateJwtToken(user);
+                var expiresAt = DateTime.UtcNow.AddHours(2);
 
-            return new AuthResponseDto
+                var jwtToken = new JwtToken
+                {
+                    UserId = user.Id,
+                    Token = token,
+                    ExpiresAt = expiresAt,
+                    CreatedAt = DateTime.UtcNow,
+                    Revoked = false
+                };
+
+                _context.JwtTokens.Add(jwtToken);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Пользователь {Username} успешно вошел в систему", user.Username);
+
+                return new AuthResponseDto
+                {
+                    Token = token,
+                    ExpiresAt = expiresAt
+                };
+            }
+            catch (Exception ex)
             {
-                Token = token,
-                ExpiresAt = expiresAt
-            };
+                _logger.LogError(ex, "Ошибка при входе пользователя {Username}", dto.Username);
+                return StatusCode(500, "Произошла ошибка при входе.");
+            }
         }
-
-        // ================ PRIVATE HELPERS ==================
 
         private string GenerateJwtToken(User user)
         {
             var jwtKey = _config["Jwt:Key"];
             var jwtIssuer = _config["Jwt:Issuer"] ?? "RestaurantAPI";
 
+            var roleName = user.Role?.Name ?? "User";
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim("userId", user.Id.ToString())
+                new Claim("userId", user.Id.ToString()),
+                new Claim(ClaimTypes.Role, roleName)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
@@ -112,20 +148,6 @@ namespace RestaurantAPI.Controllers
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        private string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            var hash = sha256.ComputeHash(bytes);
-            return Convert.ToBase64String(hash);
-        }
-
-        private bool VerifyPassword(string password, string hashedPassword)
-        {
-            var hash = HashPassword(password);
-            return hash == hashedPassword;
         }
     }
 }

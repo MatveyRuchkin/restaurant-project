@@ -1,0 +1,63 @@
+﻿@page "/Menu/Index"
+@model RestaurantWeb.Pages.Menu.IndexModel
+
+@{
+    ViewData["Title"] = "Меню";
+}
+
+<h1 class="mb-4">Меню</h1>
+
+<!-- ░▒▓ КАТЕГОРИИ (Меню) ▓▒░ -->
+<div class="row g-3 mb-4">
+    @foreach (var menu in Model.Menus)
+    {
+        <div class="col-6 col-md-4 col-lg-3">
+            <form method="get">
+                <input type="hidden" name="SelectedMenuId" value="@menu.Id" />
+                <button type="submit"
+                        class="btn btn-outline-primary w-100 py-3
+                                   @(Model.SelectedMenuId == menu.Id ? "active" : "")">
+                    @menu.Name
+                </button>
+            </form>
+        </div>
+    }
+</div>
+
+<hr />
+
+<!-- ░▒▓ БЛЮДА ГРУППИРОВАННЫЕ ПО КАТЕГОРИЯМ ▓▒░ -->
+@if (Model.GroupedDishes.Any())
+{
+    @foreach (var category in Model.GroupedDishes)
+    {
+        <h3 class="mt-4 mb-3">@category.Key</h3>
+
+        <div class="row g-4">
+            @foreach (var dish in category.Value)
+            {
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">@dish.Name</h5>
+                            <p class="card-text text-muted">@dish.Description</p>
+                            <p class="fw-bold">@dish.Price.ToString("C")</p>
+
+                            <form method="post" asp-page="/Menu/Index" asp-page-handler="AddToCart">
+                                <input type="hidden" name="DishId" value="@dish.Id" />
+                                <input type="hidden" name="SelectedMenuId" value="@Model.SelectedMenuId" />
+                                <button class="btn btn-success w-100">
+                                    Добавить в корзину 🛒
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+else
+{
+    <p class="text-muted">Блюда не найдены.</p>
+}

@@ -1,4 +1,6 @@
-﻿namespace RestaurantAPI.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace RestaurantAPI.DTOs
 {
     public class MenuDishReadDto
     {
@@ -11,14 +13,19 @@
 
     public class MenuDishCreateDto
     {
+        [Required(ErrorMessage = "ID меню обязателен")]
         public Guid MenuId { get; set; }
+
+        [Required(ErrorMessage = "ID блюда обязателен")]
         public Guid DishId { get; set; }
     }
 
     public class MenuDishUpdateDto
     {
+        [Required(ErrorMessage = "ID меню обязателен")]
         public Guid MenuId { get; set; }
+
+        [Required(ErrorMessage = "ID блюда обязателен")]
         public Guid DishId { get; set; }
     }
-
 }

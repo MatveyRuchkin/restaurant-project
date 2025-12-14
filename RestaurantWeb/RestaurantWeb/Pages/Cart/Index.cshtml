@@ -1,0 +1,39 @@
+﻿@page
+@model RestaurantWeb.Pages.Cart.IndexModel
+
+<h2>Корзина</h2>
+
+@if (Model.Cart.Count == 0)
+{
+    <p>Корзина пуста.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Блюдо</th>
+                <th>Цена</th>
+                <th>Кол-во</th>
+                <th>Сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Cart)
+            {
+                <tr>
+                    <td>@item.DishName</td>
+                    <td>@item.Price</td>
+                    <td>@item.Quantity</td>
+                    <td>@(item.Price* item.Quantity)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <form method="post" asp-page-handler="Clear">
+        <button class="btn btn-danger">Очистить корзину</button>
+    </form>
+
+    <a class="btn btn-success mt-3" asp-page="/Cart/Checkout">Оформить заказ</a>
+}
