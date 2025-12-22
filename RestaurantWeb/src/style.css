@@ -1,0 +1,134 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Основной текст и UI - Inter */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #F5F5F2;
+  color: #2B2B2B;
+}
+
+/* Заголовки - Roboto Slab */
+h1, h2, h3, h4, h5, h6,
+.title,
+.heading {
+  font-family: 'Roboto Slab', serif;
+  font-weight: 600;
+}
+
+/* Акценты - Bebas Neue */
+.accent-font,
+.logo,
+.btn-accent,
+.brand-name {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1px;
+  font-weight: normal;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: #E3B23C;
+  color: #2B2B2B;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #C99A2E;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-success {
+  background: #E3B23C;
+  color: #2B2B2B;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-success:hover {
+  background: #C99A2E;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-danger {
+  background: #2F5D8C;
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-danger:hover {
+  background: #254A70;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #E0E0DC;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #FFFFFF;
+  color: #2B2B2B;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #E3B23C;
+  box-shadow: 0 0 0 2px rgba(227, 178, 60, 0.2);
+}
+
+.card {
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #E0E0DC;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+}
+
+.error {
+  color: #2F5D8C;
+  padding: 1rem;
+  background-color: #F5F5F2;
+  border-radius: 4px;
+  margin: 1rem 0;
+  border: 1px solid #E0E0DC;
+}
+
