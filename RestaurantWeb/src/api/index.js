@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { useAuth } from '@/composables/useAuth'
 import { handleApiError } from '@/utils/errorHandler'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7188/api'
@@ -15,25 +14,6 @@ const api = axios.create({
   },
   timeout: 10000
 })
-
-api.interceptors.request.use(
-  (config) => {
-    const { checkTokenAndLogout } = useAuth()
-    const token = localStorage.getItem('token')
-    
-    if (token) {
-      // Проверяем токен перед каждым запросом
-      if (checkTokenAndLogout()) {
-        return Promise.reject(new Error('Токен истек'))
-      }
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
 
 /**
  * Проверяет, истек ли JWT токен
@@ -53,17 +33,54 @@ export function isTokenExpired(token) {
   }
 }
 
+/**
+ * Проверяет токен и очищает данные при истечении
+ * @returns {boolean} true если токен истек
+ */
+function checkTokenAndClear() {
+  const token = localStorage.getItem('token')
+  if (token && isTokenExpired(token)) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    // Очищаем store асинхронно если он доступен
+    import('@/stores/auth').then(({ useAuthStore }) => {
+      const authStore = useAuthStore()
+      authStore.logout()
+    }).catch(() => {
+      // Store может быть недоступен, это нормально
+    })
+    return true
+  }
+  return false
+}
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    
+    if (token) {
+      // Проверяем токен перед каждым запросом
+      if (checkTokenAndClear()) {
+        return Promise.reject(new Error('Токен истек'))
+      }
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const { checkTokenAndLogout } = useAuth()
-    
     // Обрабатываем ошибку централизованно
     const errorInfo = handleApiError(error)
     
     // Автоматический logout при 401
     if (errorInfo.type === 'unauthorized') {
-      checkTokenAndLogout()
+      checkTokenAndClear()
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         window.location.href = '/login?expired=true'
       }
