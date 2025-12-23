@@ -15,7 +15,6 @@
           <input id="searchFilter" v-model="filters.search" type="text" placeholder="Название меню..." class="form-control" />
         </div>
         <div class="filter-group">
-          <button @click="applyFilters" class="btn btn-primary btn-sm">Применить</button>
           <button @click="clearFilters" class="btn btn-secondary btn-sm">Сбросить</button>
         </div>
       </div>
@@ -79,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { menusApi } from '@/api/menus'
 import { dishesApi } from '@/api/dishes'
 import { menuDishesApi } from '@/api/menuDishes'
@@ -100,10 +99,6 @@ const menuForm = ref({ name: '' })
 const filters = ref({
   search: ''
 })
-
-const applyFilters = () => {
-  loadMenus()
-}
 
 const clearFilters = () => {
   filters.value = { search: '' }
@@ -228,6 +223,22 @@ const closeDishModal = () => {
   menuDishes.value = []
   selectedDishId.value = ''
 }
+
+// Debounce функция для текстовых полей
+let searchTimeout = null
+const debouncedLoadMenus = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    loadMenus()
+  }, 500)
+}
+
+// Debounced реакция для текстового поиска
+watch(() => filters.value.search, () => {
+  debouncedLoadMenus()
+})
 
 onMounted(() => {
   loadMenus()

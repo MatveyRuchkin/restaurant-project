@@ -1,36 +1,42 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
+using RestaurantAPI.Exceptions;
+using RestaurantAPI.Helpers;
 using RestaurantAPI.Models;
 using RestaurantAPI.Services;
-using System.Security.Claims;
+using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Policy = "Admin")]
-    public class UsersController : ControllerBase
+    public class UsersController : BaseController
     {
         private readonly RestaurantDbContext _context;
         private readonly IPasswordService _passwordService;
+        private readonly IMapper _mapper;
         private readonly ILogger<UsersController> _logger;
 
         public UsersController(
             RestaurantDbContext context,
             IPasswordService passwordService,
+            IMapper mapper,
             ILogger<UsersController> logger)
         {
             _context = context;
             _passwordService = passwordService;
+            _mapper = mapper;
             _logger = logger;
         }
 
         // GET: api/Users
         // Поддерживает фильтрацию, сортировку и пагинацию
         [HttpGet]
-        public async Task<ActionResult> GetUsers(
+        public async Task<ActionResult<PagedResult<UserReadDto>>> GetUsers(
             Guid? roleId = null,
             string? search = null,
             string sortBy = "username",
@@ -41,8 +47,9 @@ namespace RestaurantAPI.Controllers
             try
             {
                 var query = _context.Users
+                    .Where(u => !u.IsDeleted)
                     .Include(u => u.Role)
-                    .Where(u => !u.IsDeleted);
+                    .AsQueryable();
 
                 // Фильтрация по роли
                 if (roleId.HasValue)
@@ -57,7 +64,7 @@ namespace RestaurantAPI.Controllers
                 }
 
                 // Сортировка
-                query = sortBy.ToLower() switch
+                var orderedQuery = sortBy.ToLower() switch
                 {
                     "username" => order.ToLower() == "desc"
                         ? query.OrderByDescending(u => u.Username)
@@ -72,37 +79,32 @@ namespace RestaurantAPI.Controllers
                 };
 
                 // Подсчет общего количества
-                var totalCount = await query.CountAsync();
+                var totalCount = await orderedQuery.CountAsync();
 
                 // Пагинация
-                var users = await query
+                var users = await orderedQuery
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(u => new UserReadDto
-                    {
-                        Id = u.Id,
-                        Username = u.Username,
-                        RoleName = u.Role.Name
-                    })
                     .ToListAsync();
+
+                var userDtos = _mapper.Map<IEnumerable<UserReadDto>>(users);
 
                 _logger.LogInformation(
                     "Получен список пользователей. Количество: {Count}, Всего: {Total}, Страница: {Page}",
                     users.Count, totalCount, page);
 
-                return Ok(new
+                return Ok(new PagedResult<UserReadDto>
                 {
-                    data = users,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = userDtos,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка пользователей");
-                return StatusCode(500, "Произошла ошибка при получении списка пользователей.");
+                throw;
             }
         }
 
@@ -119,22 +121,20 @@ namespace RestaurantAPI.Controllers
                 if (user == null)
                 {
                     _logger.LogWarning("Пользователь с Id {UserId} не найден", id);
-                    return NotFound();
+                    throw new NotFoundException("Пользователь не найден");
                 }
 
-                var dto = new UserReadDto
-                {
-                    Id = user.Id,
-                    Username = user.Username,
-                    RoleName = user.Role.Name
-                };
-
+                var dto = _mapper.Map<UserReadDto>(user);
                 return Ok(dto);
+            }
+            catch (NotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении пользователя {UserId}", id);
-                return StatusCode(500, "Произошла ошибка при получении пользователя.");
+                throw;
             }
         }
 
@@ -142,54 +142,56 @@ namespace RestaurantAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<UserReadDto>> CreateUser(UserCreateDto createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на существующего пользователя
                 if (await _context.Users.AnyAsync(u => u.Username == createDto.Username && !u.IsDeleted))
                 {
                     _logger.LogWarning("Попытка создания пользователя с существующим именем: {Username}", createDto.Username);
-                    return BadRequest("Пользователь с таким именем уже существует.");
+                    throw new BadRequestException("Пользователь с таким именем уже существует.");
                 }
 
-                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == createDto.RoleId && !r.IsDeleted);
+                var role = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Id == createDto.RoleId && !r.IsDeleted);
                 if (role == null)
                 {
                     _logger.LogWarning("Попытка создания пользователя с несуществующей ролью: {RoleId}", createDto.RoleId);
-                    return BadRequest("Роль не найдена.");
+                    throw new BadRequestException("Роль не найдена.");
                 }
 
                 var passwordHash = _passwordService.HashPassword(createDto.Password);
 
-                var user = new User
-                {
-                    Username = createDto.Username,
-                    PasswordHash = passwordHash,
-                    RoleId = createDto.RoleId,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = username
-                };
+                var user = _mapper.Map<User>(createDto);
+                user.PasswordHash = passwordHash;
+                user.CreatedAt = DateTime.UtcNow;
+                user.CreatedBy = username;
 
-                _context.Users.Add(user);
+                await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Пользователь {Username} создан администратором {AdminUsername}",
                     user.Username, username);
 
-                var readDto = new UserReadDto
-                {
-                    Id = user.Id,
-                    Username = user.Username,
-                    RoleName = role.Name
-                };
+                var readDto = _mapper.Map<UserReadDto>(user);
+                readDto.RoleName = role.Name;
 
                 return CreatedAtAction(nameof(GetUser), new { id = user.Id }, readDto);
+            }
+            catch (BadRequestException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при создании пользователя {Username}", createDto.Username);
-                return StatusCode(500, "Произошла ошибка при создании пользователя.");
+                throw;
             }
         }
 
@@ -197,34 +199,42 @@ namespace RestaurantAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(Guid id, UserUpdateDto updateDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
                 if (user == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующего пользователя: {UserId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Пользователь не найден");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 if (!string.IsNullOrWhiteSpace(updateDto.Password))
                 {
                     user.PasswordHash = _passwordService.HashPassword(updateDto.Password);
                 }
 
-                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == updateDto.RoleId && !r.IsDeleted);
+                var role = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Id == updateDto.RoleId && !r.IsDeleted);
                 if (role == null)
                 {
                     _logger.LogWarning("Попытка обновления пользователя {UserId} с несуществующей ролью: {RoleId}",
                         id, updateDto.RoleId);
-                    return BadRequest("Роль не найдена.");
+                    throw new BadRequestException("Роль не найдена.");
                 }
 
                 user.RoleId = updateDto.RoleId;
                 user.UpdatedAt = DateTime.UtcNow;
                 user.UpdatedBy = username;
 
+                _context.Users.Update(user);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Пользователь {UserId} обновлен администратором {AdminUsername}",
@@ -232,10 +242,18 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении пользователя {UserId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении пользователя.");
+                throw;
             }
         }
 
@@ -245,19 +263,21 @@ namespace RestaurantAPI.Controllers
         {
             try
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
                 if (user == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующего пользователя: {UserId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Пользователь не найден");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 user.IsDeleted = true;
                 user.DeletedAt = DateTime.UtcNow;
                 user.DeletedBy = username;
 
+                _context.Users.Update(user);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Пользователь {UserId} ({Username}) удален администратором {AdminUsername}",
@@ -265,10 +285,14 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении пользователя {UserId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении пользователя.");
+                throw;
             }
         }
     }

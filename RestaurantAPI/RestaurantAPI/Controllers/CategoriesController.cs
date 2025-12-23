@@ -1,29 +1,41 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
+using RestaurantAPI.Exceptions;
+using RestaurantAPI.Helpers;
 using RestaurantAPI.Models;
+using RestaurantAPI.Services;
+using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController : BaseController
     {
         private readonly RestaurantDbContext _context;
+        private readonly IBusinessValidationService _validationService;
+        private readonly IMapper _mapper;
         private readonly ILogger<CategoriesController> _logger;
 
-        public CategoriesController(RestaurantDbContext context, ILogger<CategoriesController> logger)
+        public CategoriesController(
+            RestaurantDbContext context,
+            IBusinessValidationService validationService,
+            IMapper mapper,
+            ILogger<CategoriesController> logger)
         {
             _context = context;
+            _validationService = validationService;
+            _mapper = mapper;
             _logger = logger;
         }
 
-        // GET: api/Categories - доступно всем авторизованным
+        // GET: api/Categories - доступно всем (включая неавторизованных)
         // Поддерживает фильтрацию, сортировку и пагинацию
         [HttpGet]
-        [Authorize]
-        public async Task<ActionResult> GetCategories(
+        public async Task<ActionResult<PagedResult<CategoryReadDto>>> GetCategories(
             string? search = null,
             string sortBy = "name",
             string order = "asc",
@@ -33,7 +45,8 @@ namespace RestaurantAPI.Controllers
             try
             {
                 var query = _context.Categories
-                    .Where(c => !c.IsDeleted);
+                    .Where(c => !c.IsDeleted)
+                    .AsQueryable();
 
                 // Поиск по названию
                 if (!string.IsNullOrWhiteSpace(search))
@@ -58,61 +71,54 @@ namespace RestaurantAPI.Controllers
                 var categories = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(c => new CategoryReadDto
-                    {
-                        Id = c.Id,
-                        Name = c.Name,
-                        Notes = c.Notes
-                    })
                     .ToListAsync();
+
+                var categoryDtos = _mapper.Map<IEnumerable<CategoryReadDto>>(categories);
 
                 _logger.LogInformation(
                     "Получен список категорий. Количество: {Count}, Всего: {Total}, Страница: {Page}",
                     categories.Count, totalCount, page);
 
-                return Ok(new
+                return Ok(new PagedResult<CategoryReadDto>
                 {
-                    data = categories,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = categoryDtos,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка категорий");
-                return StatusCode(500, "Произошла ошибка при получении списка категорий.");
+                throw;
             }
         }
 
-        // GET: api/Categories/5 - доступно всем авторизованным
+        // GET: api/Categories/5 - доступно всем (включая неавторизованных)
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<ActionResult<CategoryReadDto>> GetCategory(Guid id)
         {
             try
             {
-                var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+                var category = await _context.Categories
+                    .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
                 if (category == null)
                 {
                     _logger.LogWarning("Категория с Id {CategoryId} не найдена", id);
-                    return NotFound();
+                    throw new NotFoundException("Категория не найдена");
                 }
 
-                var dto = new CategoryReadDto
-                {
-                    Id = category.Id,
-                    Name = category.Name,
-                    Notes = category.Notes
-                };
-
+                var dto = _mapper.Map<CategoryReadDto>(category);
                 return Ok(dto);
+            }
+            catch (NotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении категории {CategoryId}", id);
-                return StatusCode(500, "Произошла ошибка при получении категории.");
+                throw;
             }
         }
 
@@ -121,43 +127,42 @@ namespace RestaurantAPI.Controllers
         [Authorize(Policy = "Admin")]
         public async Task<ActionResult<CategoryReadDto>> CreateCategory(CategoryCreateDto createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
                 if (await _context.Categories.AnyAsync(c => c.Name == createDto.Name && !c.IsDeleted))
                 {
                     _logger.LogWarning("Попытка создания категории с существующим названием: {Name}", createDto.Name);
-                    return BadRequest("Категория с таким названием уже существует.");
+                    throw new BadRequestException("Категория с таким названием уже существует.");
                 }
 
-                var category = new Category
-                {
-                    Name = createDto.Name,
-                    Notes = createDto.Notes,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = username
-                };
+                var category = _mapper.Map<Category>(createDto);
+                category.CreatedAt = DateTime.UtcNow;
+                category.CreatedBy = username;
 
-                _context.Categories.Add(category);
+                await _context.Categories.AddAsync(category);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Категория {Name} создана администратором {Username}", category.Name, username);
 
-                var readDto = new CategoryReadDto
-                {
-                    Id = category.Id,
-                    Name = category.Name,
-                    Notes = category.Notes
-                };
-
+                var readDto = _mapper.Map<CategoryReadDto>(category);
                 return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, readDto);
+            }
+            catch (BadRequestException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при создании категории {Name}", createDto.Name);
-                return StatusCode(500, "Произошла ошибка при создании категории.");
+                throw;
             }
         }
 
@@ -166,41 +171,54 @@ namespace RestaurantAPI.Controllers
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> UpdateCategory(Guid id, CategoryUpdateDto updateDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+                var category = await _context.Categories
+                    .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
                 if (category == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующей категории: {CategoryId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Категория не найдена");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
-                if (await _context.Categories.AnyAsync(c =>
-                    c.Name == updateDto.Name && c.Id != id && !c.IsDeleted))
+                if (await _context.Categories.AnyAsync(c => c.Name == updateDto.Name && c.Id != id && !c.IsDeleted))
                 {
                     _logger.LogWarning("Попытка обновления категории {CategoryId} с существующим названием: {Name}",
                         id, updateDto.Name);
-                    return BadRequest("Категория с таким названием уже существует.");
+                    throw new BadRequestException("Категория с таким названием уже существует.");
                 }
 
-                category.Name = updateDto.Name;
-                category.Notes = updateDto.Notes;
+                _mapper.Map(updateDto, category);
                 category.UpdatedAt = DateTime.UtcNow;
                 category.UpdatedBy = username;
 
+                _context.Categories.Update(category);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Категория {CategoryId} обновлена администратором {Username}", id, username);
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении категории {CategoryId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении категории.");
+                throw;
             }
         }
 
@@ -211,19 +229,24 @@ namespace RestaurantAPI.Controllers
         {
             try
             {
-                var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+                var category = await _context.Categories
+                    .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
                 if (category == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующей категории: {CategoryId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Категория не найдена");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                // Валидация бизнес-логики удаления
+                await _validationService.ValidateCategoryDeletionAsync(id);
+
+                var username = GetCurrentUsername();
 
                 category.IsDeleted = true;
                 category.DeletedAt = DateTime.UtcNow;
                 category.DeletedBy = username;
 
+                _context.Categories.Update(category);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Категория {CategoryId} ({Name}) удалена администратором {Username}",
@@ -231,10 +254,18 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении категории {CategoryId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении категории.");
+                throw;
             }
         }
     }

@@ -9,6 +9,7 @@ namespace RestaurantAPI.DTOs
         public string DishName { get; set; } = null!;
         public int Quantity { get; set; }
         public decimal Price { get; set; }
+        public string? Notes { get; set; }
     }
 
     public class OrderItemCreateDto
@@ -19,6 +20,9 @@ namespace RestaurantAPI.DTOs
         [Required(ErrorMessage = "Количество обязательно")]
         [Range(1, 100, ErrorMessage = "Количество должно быть от 1 до 100")]
         public int Quantity { get; set; }
+
+        [StringLength(500, ErrorMessage = "Примечания не должны превышать 500 символов")]
+        public string? Notes { get; set; }
     }
 
     public class OrderItemUpdateDto

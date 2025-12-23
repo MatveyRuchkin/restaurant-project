@@ -22,7 +22,6 @@
           </select>
         </div>
         <div class="filter-group">
-          <button @click="applyFilters" class="btn btn-primary btn-sm">Применить</button>
           <button @click="clearFilters" class="btn btn-secondary btn-sm">Сбросить</button>
         </div>
       </div>
@@ -83,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { usersApi } from '@/api/users'
 import { rolesApi } from '@/api/roles'
 import { ROLES } from '@/constants'
@@ -126,10 +125,6 @@ const loadUsers = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const applyFilters = () => {
-  loadUsers()
 }
 
 const clearFilters = () => {
@@ -204,6 +199,27 @@ const getRoleClass = (roleName) => {
   }
   return roleMap[roleName] || ''
 }
+
+// Debounce функция для текстовых полей
+let searchTimeout = null
+const debouncedLoadUsers = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    loadUsers()
+  }, 500)
+}
+
+// Реактивные фильтры
+watch(() => filters.value.roleId, () => {
+  loadUsers()
+})
+
+// Debounced реакция для текстового поиска
+watch(() => filters.value.search, () => {
+  debouncedLoadUsers()
+})
 
 onMounted(() => {
   loadUsers()

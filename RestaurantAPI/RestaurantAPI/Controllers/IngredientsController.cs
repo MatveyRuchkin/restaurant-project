@@ -1,21 +1,34 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RestaurantAPI.Models;
 using RestaurantAPI.DTOs;
+using RestaurantAPI.Exceptions;
+using RestaurantAPI.Helpers;
+using RestaurantAPI.Models;
+using RestaurantAPI.Services;
+using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class IngredientsController : ControllerBase
+    public class IngredientsController : BaseController
     {
         private readonly RestaurantDbContext _context;
+        private readonly IBusinessValidationService _validationService;
+        private readonly IMapper _mapper;
         private readonly ILogger<IngredientsController> _logger;
 
-        public IngredientsController(RestaurantDbContext context, ILogger<IngredientsController> logger)
+        public IngredientsController(
+            RestaurantDbContext context,
+            IBusinessValidationService validationService,
+            IMapper mapper,
+            ILogger<IngredientsController> logger)
         {
             _context = context;
+            _validationService = validationService;
+            _mapper = mapper;
             _logger = logger;
         }
 
@@ -23,7 +36,7 @@ namespace RestaurantAPI.Controllers
         // Поддерживает фильтрацию, сортировку и пагинацию
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult> GetIngredients(
+        public async Task<ActionResult<PagedResult<IngredientReadDto>>> GetIngredients(
             string? search = null,
             string sortBy = "name",
             string order = "asc",
@@ -33,7 +46,8 @@ namespace RestaurantAPI.Controllers
             try
             {
                 var query = _context.Ingredients
-                    .Where(i => !i.IsDeleted);
+                    .Where(i => !i.IsDeleted)
+                    .AsQueryable();
 
                 // Поиск по названию
                 if (!string.IsNullOrWhiteSpace(search))
@@ -57,30 +71,26 @@ namespace RestaurantAPI.Controllers
                 var ingredients = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(i => new IngredientReadDto
-                    {
-                        Id = i.Id,
-                        Name = i.Name
-                    })
                     .ToListAsync();
+
+                var ingredientDtos = _mapper.Map<IEnumerable<IngredientReadDto>>(ingredients);
 
                 _logger.LogInformation(
                     "Получен список ингредиентов. Количество: {Count}, Всего: {Total}, Страница: {Page}",
                     ingredients.Count, totalCount, page);
 
-                return Ok(new
+                return Ok(new PagedResult<IngredientReadDto>
                 {
-                    data = ingredients,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = ingredientDtos,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка ингредиентов");
-                return StatusCode(500, "Произошла ошибка при получении списка ингредиентов.");
+                throw;
             }
         }
 
@@ -97,21 +107,20 @@ namespace RestaurantAPI.Controllers
                 if (ingredient == null)
                 {
                     _logger.LogWarning("Ингредиент с Id {IngredientId} не найден", id);
-                    return NotFound();
+                    throw new NotFoundException("Ингредиент не найден");
                 }
 
-                var dto = new IngredientReadDto
-                {
-                    Id = ingredient.Id,
-                    Name = ingredient.Name
-                };
-
+                var dto = _mapper.Map<IngredientReadDto>(ingredient);
                 return Ok(dto);
+            }
+            catch (NotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении ингредиента {IngredientId}", id);
-                return StatusCode(500, "Произошла ошибка при получении ингредиента.");
+                throw;
             }
         }
 
@@ -120,42 +129,43 @@ namespace RestaurantAPI.Controllers
         [Authorize(Policy = "Admin")]
         public async Task<ActionResult<IngredientReadDto>> CreateIngredient(IngredientCreateDto createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
                 if (await _context.Ingredients.AnyAsync(i => i.Name == createDto.Name && !i.IsDeleted))
                 {
                     _logger.LogWarning("Попытка создания ингредиента с существующим названием: {Name}", createDto.Name);
-                    return BadRequest("Ингредиент с таким названием уже существует.");
+                    throw new BadRequestException("Ингредиент с таким названием уже существует.");
                 }
 
-                var ingredient = new Ingredient
-                {
-                    Name = createDto.Name,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = username
-                };
+                var ingredient = _mapper.Map<Ingredient>(createDto);
+                ingredient.CreatedAt = DateTime.UtcNow;
+                ingredient.CreatedBy = username;
 
-                _context.Ingredients.Add(ingredient);
+                await _context.Ingredients.AddAsync(ingredient);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Ингредиент {Name} создан администратором {Username}",
                     ingredient.Name, username);
 
-                var readDto = new IngredientReadDto
-                {
-                    Id = ingredient.Id,
-                    Name = ingredient.Name
-                };
-
+                var readDto = _mapper.Map<IngredientReadDto>(ingredient);
                 return CreatedAtAction(nameof(GetIngredient), new { id = ingredient.Id }, readDto);
+            }
+            catch (BadRequestException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при создании ингредиента {Name}", createDto.Name);
-                return StatusCode(500, "Произошла ошибка при создании ингредиента.");
+                throw;
             }
         }
 
@@ -164,6 +174,11 @@ namespace RestaurantAPI.Controllers
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> UpdateIngredient(Guid id, IngredientUpdateDto updateDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 var ingredient = await _context.Ingredients
@@ -172,34 +187,42 @@ namespace RestaurantAPI.Controllers
                 if (ingredient == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующего ингредиента: {IngredientId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Ингредиент не найден");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
-                if (await _context.Ingredients.AnyAsync(i =>
-                    i.Name == updateDto.Name && i.Id != id && !i.IsDeleted))
+                if (await _context.Ingredients.AnyAsync(i => i.Name == updateDto.Name && i.Id != id && !i.IsDeleted))
                 {
                     _logger.LogWarning("Попытка обновления ингредиента {IngredientId} с существующим названием: {Name}",
                         id, updateDto.Name);
-                    return BadRequest("Ингредиент с таким названием уже существует.");
+                    throw new BadRequestException("Ингредиент с таким названием уже существует.");
                 }
 
-                ingredient.Name = updateDto.Name;
+                _mapper.Map(updateDto, ingredient);
                 ingredient.UpdatedAt = DateTime.UtcNow;
                 ingredient.UpdatedBy = username;
 
+                _context.Ingredients.Update(ingredient);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Ингредиент {IngredientId} обновлен администратором {Username}", id, username);
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении ингредиента {IngredientId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении ингредиента.");
+                throw;
             }
         }
 
@@ -216,15 +239,19 @@ namespace RestaurantAPI.Controllers
                 if (ingredient == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующего ингредиента: {IngredientId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Ингредиент не найден");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                // Валидация бизнес-логики удаления
+                await _validationService.ValidateIngredientDeletionAsync(id);
+
+                var username = GetCurrentUsername();
 
                 ingredient.IsDeleted = true;
                 ingredient.DeletedAt = DateTime.UtcNow;
                 ingredient.DeletedBy = username;
 
+                _context.Ingredients.Update(ingredient);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Ингредиент {IngredientId} ({Name}) удален администратором {Username}",
@@ -232,10 +259,14 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении ингредиента {IngredientId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении ингредиента.");
+                throw;
             }
         }
     }

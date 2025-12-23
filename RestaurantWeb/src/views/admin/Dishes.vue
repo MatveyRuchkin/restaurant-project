@@ -30,7 +30,6 @@
           </div>
         </div>
         <div class="filter-group">
-          <button @click="applyFilters" class="btn btn-primary btn-sm">Применить</button>
           <button @click="clearFilters" class="btn btn-secondary btn-sm">Сбросить</button>
         </div>
       </div>
@@ -101,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { dishesApi } from '@/api/dishes'
 import { categoriesApi } from '@/api/categories'
 import { ingredientsApi } from '@/api/ingredients'
@@ -135,10 +134,6 @@ const dishForm = ref({
   categoryId: '',
   ingredients: []
 })
-
-const applyFilters = () => {
-  loadDishes()
-}
 
 const clearFilters = () => {
   filters.value = {
@@ -333,6 +328,35 @@ const closeModal = () => {
   }
   dishIngredients.value = []
 }
+
+// Debounce функция для текстовых полей
+let searchTimeout = null
+const debouncedLoadDishes = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    loadDishes()
+  }, 500)
+}
+
+// Реактивные фильтры
+watch(() => filters.value.categoryId, () => {
+  loadDishes()
+})
+
+watch(() => filters.value.minPrice, () => {
+  loadDishes()
+})
+
+watch(() => filters.value.maxPrice, () => {
+  loadDishes()
+})
+
+// Debounced реакция для текстового поиска
+watch(() => filters.value.search, () => {
+  debouncedLoadDishes()
+})
 
 onMounted(() => {
   loadDishes()

@@ -15,7 +15,6 @@
           <input id="searchFilter" v-model="filters.search" type="text" placeholder="Название ингредиента..." class="form-control" />
         </div>
         <div class="filter-group">
-          <button @click="applyFilters" class="btn btn-primary btn-sm">Применить</button>
           <button @click="clearFilters" class="btn btn-secondary btn-sm">Сбросить</button>
         </div>
       </div>
@@ -51,7 +50,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ingredientsApi } from '@/api/ingredients'
 
 const ingredients = ref([])
@@ -66,10 +65,6 @@ const ingredientForm = ref({ name: '' })
 const filters = ref({
   search: ''
 })
-
-const applyFilters = () => {
-  loadIngredients()
-}
 
 const clearFilters = () => {
   filters.value = { search: '' }
@@ -136,6 +131,22 @@ const closeModal = () => {
   editingIngredient.value = null
   ingredientForm.value = { name: '' }
 }
+
+// Debounce функция для текстовых полей
+let searchTimeout = null
+const debouncedLoadIngredients = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    loadIngredients()
+  }, 500)
+}
+
+// Debounced реакция для текстового поиска
+watch(() => filters.value.search, () => {
+  debouncedLoadIngredients()
+})
 
 onMounted(() => {
   loadIngredients()

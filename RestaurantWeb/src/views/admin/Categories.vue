@@ -15,7 +15,6 @@
           <input id="searchFilter" v-model="filters.search" type="text" placeholder="Название категории..." class="form-control" />
         </div>
         <div class="filter-group">
-          <button @click="applyFilters" class="btn btn-primary btn-sm">Применить</button>
           <button @click="clearFilters" class="btn btn-secondary btn-sm">Сбросить</button>
         </div>
       </div>
@@ -58,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { categoriesApi } from '@/api/categories'
 
 const categories = ref([])
@@ -76,10 +75,6 @@ const categoryForm = ref({
 const filters = ref({
   search: ''
 })
-
-const applyFilters = () => {
-  loadCategories()
-}
 
 const clearFilters = () => {
   filters.value = { search: '' }
@@ -152,6 +147,22 @@ const closeModal = () => {
     notes: ''
   }
 }
+
+// Debounce функция для текстовых полей
+let searchTimeout = null
+const debouncedLoadCategories = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    loadCategories()
+  }, 500)
+}
+
+// Debounced реакция для текстового поиска
+watch(() => filters.value.search, () => {
+  debouncedLoadCategories()
+})
 
 onMounted(() => {
   loadCategories()

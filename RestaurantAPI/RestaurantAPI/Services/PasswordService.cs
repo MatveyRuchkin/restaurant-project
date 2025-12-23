@@ -6,6 +6,7 @@ namespace RestaurantAPI.Services
     {
         string HashPassword(string password);
         bool VerifyPassword(string password, string hashedPassword);
+        (bool IsValid, string ErrorMessage) ValidatePasswordRequirements(string password);
     }
 
     public class PasswordService : IPasswordService
@@ -31,6 +32,29 @@ namespace RestaurantAPI.Services
             {
                 return false;
             }
+        }
+
+        public (bool IsValid, string ErrorMessage) ValidatePasswordRequirements(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return (false, "Пароль не может быть пустым");
+
+            if (password.Length < 8)
+                return (false, "Пароль должен содержать минимум 8 символов");
+
+            if (!password.Any(char.IsUpper))
+                return (false, "Пароль должен содержать хотя бы одну заглавную букву");
+
+            if (!password.Any(char.IsLower))
+                return (false, "Пароль должен содержать хотя бы одну строчную букву");
+
+            if (!password.Any(char.IsDigit))
+                return (false, "Пароль должен содержать хотя бы одну цифру");
+
+            if (!password.Any(ch => !char.IsLetterOrDigit(ch)))
+                return (false, "Пароль должен содержать хотя бы один специальный символ");
+
+            return (true, string.Empty);
         }
     }
 }

@@ -1,29 +1,43 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
+using RestaurantAPI.Exceptions;
+using RestaurantAPI.Helpers;
 using RestaurantAPI.Models;
+using RestaurantAPI.Services;
+using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DishesController : ControllerBase
+    public class DishesController : BaseController
     {
         private readonly RestaurantDbContext _context;
+        private readonly IBusinessValidationService _validationService;
+        private readonly IMapper _mapper;
         private readonly ILogger<DishesController> _logger;
 
-        public DishesController(RestaurantDbContext context, ILogger<DishesController> logger)
+        public DishesController(
+            RestaurantDbContext context,
+            IBusinessValidationService validationService,
+            IMapper mapper,
+            ILogger<DishesController> logger)
         {
             _context = context;
+            _validationService = validationService;
+            _mapper = mapper;
             _logger = logger;
         }
 
-        // GET: api/Dishes - доступно всем авторизованным
-        // Поддерживает фильтрацию, сортировку и пагинацию
+        /// <summary>
+        /// Получение списка блюд с фильтрацией, сортировкой и пагинацией
+        /// Доступно всем (включая неавторизованных пользователей)
+        /// </summary>
         [HttpGet]
-        [Authorize]
-        public async Task<ActionResult> GetDishes(
+        public async Task<ActionResult<PagedResult<DishReadDto>>> GetDishes(
             Guid? categoryId = null,
             decimal? minPrice = null,
             decimal? maxPrice = null,
@@ -35,17 +49,15 @@ namespace RestaurantAPI.Controllers
         {
             try
             {
-                var query = _context.Dishes
-                    .Include(d => d.Category)
-                    .Where(d => !d.IsDeleted);
+                IQueryable<Dish> query = _context.Dishes
+                    .Where(d => !d.IsDeleted)
+                    .Include(d => d.Category);
 
-                // Фильтрация по категории
                 if (categoryId.HasValue)
                 {
                     query = query.Where(d => d.CategoryId == categoryId.Value);
                 }
 
-                // Фильтрация по цене
                 if (minPrice.HasValue)
                 {
                     query = query.Where(d => d.Price >= minPrice.Value);
@@ -56,15 +68,13 @@ namespace RestaurantAPI.Controllers
                     query = query.Where(d => d.Price <= maxPrice.Value);
                 }
 
-                // Поиск по названию
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(d => d.Name.Contains(search) || 
                                            (d.Description != null && d.Description.Contains(search)));
                 }
 
-                // Сортировка
-                query = sortBy.ToLower() switch
+                var orderedQuery = sortBy.ToLower() switch
                 {
                     "price" => order.ToLower() == "desc"
                         ? query.OrderByDescending(d => d.Price)
@@ -78,46 +88,37 @@ namespace RestaurantAPI.Controllers
                     _ => query.OrderBy(d => d.Name)
                 };
 
-                // Подсчет общего количества
-                var totalCount = await query.CountAsync();
-
-                // Пагинация
-                var dishes = await query
+                var totalCount = await orderedQuery.CountAsync();
+                var dishes = await orderedQuery
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(d => new DishReadDto
-                    {
-                        Id = d.Id,
-                        Name = d.Name,
-                        Description = d.Description,
-                        Price = d.Price,
-                        CategoryName = d.Category.Name
-                    })
                     .ToListAsync();
+
+                var dishDtos = _mapper.Map<IEnumerable<DishReadDto>>(dishes);
 
                 _logger.LogInformation(
                     "Получен список блюд. Количество: {Count}, Всего: {Total}, Страница: {Page}, Размер страницы: {PageSize}",
                     dishes.Count, totalCount, page, pageSize);
 
-                return Ok(new
+                return Ok(new PagedResult<DishReadDto>
                 {
-                    data = dishes,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = dishDtos,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка блюд");
-                return StatusCode(500, "Произошла ошибка при получении списка блюд.");
+                throw;
             }
         }
 
-        // GET: api/Dishes/5 - доступно всем авторизованным
+        /// <summary>
+        /// Получение блюда по ID. Доступно всем (включая неавторизованных пользователей)
+        /// </summary>
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<ActionResult<DishReadDto>> GetDish(Guid id)
         {
             try
@@ -129,41 +130,43 @@ namespace RestaurantAPI.Controllers
                 if (dish == null)
                 {
                     _logger.LogWarning("Блюдо с Id {DishId} не найдено", id);
-                    return NotFound();
+                    throw new NotFoundException("Блюдо не найдено");
                 }
 
-                var dto = new DishReadDto
-                {
-                    Id = dish.Id,
-                    Name = dish.Name,
-                    Description = dish.Description,
-                    Price = dish.Price,
-                    CategoryName = dish.Category.Name
-                };
-
+                var dto = _mapper.Map<DishReadDto>(dish);
                 return Ok(dto);
+            }
+            catch (NotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении блюда {DishId}", id);
-                return StatusCode(500, "Произошла ошибка при получении блюда.");
+                throw;
             }
         }
 
-        // POST: api/Dishes - только админ
+        /// <summary>
+        /// Создание нового блюда (только для админов)
+        /// </summary>
         [HttpPost]
         [Authorize(Policy = "Admin")]
         public async Task<ActionResult<DishReadDto>> CreateDish(DishCreateDto createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
-                // Проверка на дубликат
                 if (await _context.Dishes.AnyAsync(d => d.Name == createDto.Name && !d.IsDeleted))
                 {
                     _logger.LogWarning("Попытка создания блюда с существующим названием: {Name}", createDto.Name);
-                    return BadRequest("Блюдо с таким названием уже существует.");
+                    throw new BadRequestException("Блюдо с таким названием уже существует.");
                 }
 
                 var category = await _context.Categories
@@ -171,65 +174,64 @@ namespace RestaurantAPI.Controllers
                 if (category == null)
                 {
                     _logger.LogWarning("Попытка создания блюда с несуществующей категорией: {CategoryId}", createDto.CategoryId);
-                    return BadRequest("Категория не найдена.");
+                    throw new BadRequestException("Категория не найдена.");
                 }
 
-                var dish = new Dish
-                {
-                    Name = createDto.Name,
-                    Description = createDto.Description,
-                    Price = createDto.Price,
-                    CategoryId = createDto.CategoryId,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = username
-                };
+                var dish = _mapper.Map<Dish>(createDto);
+                dish.CreatedAt = DateTime.UtcNow;
+                dish.CreatedBy = username;
 
-                _context.Dishes.Add(dish);
+                await _context.Dishes.AddAsync(dish);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Блюдо {Name} создано администратором {Username}", dish.Name, username);
 
-                var readDto = new DishReadDto
-                {
-                    Id = dish.Id,
-                    Name = dish.Name,
-                    Description = dish.Description,
-                    Price = dish.Price,
-                    CategoryName = category.Name
-                };
+                var readDto = _mapper.Map<DishReadDto>(dish);
+                readDto.CategoryName = category.Name;
 
                 return CreatedAtAction(nameof(GetDish), new { id = dish.Id }, readDto);
+            }
+            catch (BadRequestException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при создании блюда {Name}", createDto.Name);
-                return StatusCode(500, "Произошла ошибка при создании блюда.");
+                throw;
             }
         }
 
-        // PUT: api/Dishes/5 - только админ
+        /// <summary>
+        /// Обновление блюда (только для админов)
+        /// </summary>
         [HttpPut("{id}")]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> UpdateDish(Guid id, DishUpdateDto updateDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                var dish = await _context.Dishes
+                    .Include(d => d.Category)
+                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
                 if (dish == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующего блюда: {DishId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Блюдо не найдено");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
-                // Проверка на дубликат
-                if (await _context.Dishes.AnyAsync(d => 
-                    d.Name == updateDto.Name && d.Id != id && !d.IsDeleted))
+                if (await _context.Dishes.AnyAsync(d => d.Name == updateDto.Name && d.Id != id && !d.IsDeleted))
                 {
                     _logger.LogWarning("Попытка обновления блюда {DishId} с существующим названием: {Name}", 
                         id, updateDto.Name);
-                    return BadRequest("Блюдо с таким названием уже существует.");
+                    throw new BadRequestException("Блюдо с таким названием уже существует.");
                 }
 
                 var category = await _context.Categories
@@ -238,49 +240,61 @@ namespace RestaurantAPI.Controllers
                 {
                     _logger.LogWarning("Попытка обновления блюда {DishId} с несуществующей категорией: {CategoryId}", 
                         id, updateDto.CategoryId);
-                    return BadRequest("Категория не найдена.");
+                    throw new BadRequestException("Категория не найдена.");
                 }
 
-                dish.Name = updateDto.Name;
-                dish.Description = updateDto.Description;
-                dish.Price = updateDto.Price;
-                dish.CategoryId = updateDto.CategoryId;
+                _mapper.Map(updateDto, dish);
                 dish.UpdatedAt = DateTime.UtcNow;
                 dish.UpdatedBy = username;
 
+                _context.Dishes.Update(dish);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Блюдо {DishId} обновлено администратором {Username}", id, username);
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении блюда {DishId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении блюда.");
+                throw;
             }
         }
 
-        // DELETE: api/Dishes/5 - только админ
+        /// <summary>
+        /// Мягкое удаление блюда (только для админов)
+        /// </summary>
         [HttpDelete("{id}")]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> DeleteDish(Guid id)
         {
             try
             {
-                var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                var dish = await _context.Dishes
+                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
                 if (dish == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующего блюда: {DishId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Блюдо не найдено");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                await _validationService.ValidateDishDeletionAsync(id);
+
+                var username = GetCurrentUsername();
 
                 dish.IsDeleted = true;
                 dish.DeletedAt = DateTime.UtcNow;
                 dish.DeletedBy = username;
 
+                _context.Dishes.Update(dish);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Блюдо {DishId} ({Name}) удалено администратором {Username}", 
@@ -288,10 +302,18 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении блюда {DishId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении блюда.");
+                throw;
             }
         }
     }

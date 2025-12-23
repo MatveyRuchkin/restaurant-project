@@ -32,6 +32,10 @@
           <input id="usernameFilter" v-model="filters.username" type="text" placeholder="Имя пользователя..." class="form-control" />
         </div>
         <div class="filter-group">
+          <label for="orderNumberFilter">Номер заказа:</label>
+          <input id="orderNumberFilter" v-model="filters.orderNumber" type="text" placeholder="ORD..." class="form-control" />
+        </div>
+        <div class="filter-group">
           <label for="startDateFilter">Дата от:</label>
           <input id="startDateFilter" v-model="filters.startDate" type="date" class="form-control" />
         </div>
@@ -48,18 +52,17 @@
           </div>
         </div>
         <div class="filter-group">
-          <button @click="applyFilters" class="btn btn-primary btn-sm">Применить</button>
           <button @click="clearFilters" class="btn btn-secondary btn-sm">Сбросить</button>
         </div>
       </div>
 
-      <div v-if="orders.length === 0" class="empty-orders">
+      <div v-if="filteredOrders.length === 0" class="empty-orders">
         <p>Заказы не найдены</p>
       </div>
 
       <div v-else class="orders-list">
         <OrderCard
-          v-for="order in orders"
+          v-for="order in filteredOrders"
           :key="order.id"
           :order="order"
           :is-expanded="expandedOrderId === order.id"
@@ -232,7 +235,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ordersApi } from '@/api/orders'
 import { usersApi } from '@/api/users'
 import { dishesApi } from '@/api/dishes'
@@ -240,6 +243,7 @@ import api from '@/api/index'
 import OrderCard from '@/components/orders/OrderCard.vue'
 import OrderDetails from '@/components/orders/OrderDetails.vue'
 import Modal from '@/components/forms/Modal.vue'
+import { formatOrderNumber } from '@/utils/formatters'
 
 const orders = ref([])
 const users = ref([])
@@ -273,6 +277,7 @@ const generatorStatus = ref({
 const filters = ref({
   status: '',
   username: '',
+  orderNumber: '',
   startDate: '',
   endDate: '',
   minTotal: null,
@@ -284,6 +289,20 @@ const pagination = ref({
   pageSize: 20,
   totalPages: 1,
   totalCount: 0
+})
+
+// Фильтрация заказов по номеру заказа на клиенте
+const filteredOrders = computed(() => {
+  if (!filters.value.orderNumber || filters.value.orderNumber.trim() === '') {
+    return orders.value
+  }
+  
+  const searchTerm = filters.value.orderNumber.trim().toUpperCase()
+  
+  return orders.value.filter(order => {
+    const orderNumber = formatOrderNumber(order.id, order.createdAt || order.orderDate)
+    return orderNumber.toUpperCase().includes(searchTerm)
+  })
 })
 
 const toggleOrder = async (orderId) => {
@@ -325,15 +344,11 @@ const findUserIdByUsername = (username) => {
   return user?.id || null
 }
 
-const applyFilters = () => {
-  pagination.value.page = 1
-  loadOrders()
-}
-
 const clearFilters = () => {
   filters.value = {
     status: '',
     username: '',
+    orderNumber: '',
     startDate: '',
     endDate: '',
     minTotal: null,
@@ -844,6 +859,51 @@ const closeGeneratorModal = () => {
   generatorErrors.value = {}
   generatorStatus.value = { type: '', message: '' }
 }
+
+// Debounce функция для текстовых полей
+let searchTimeout = null
+const debouncedLoadOrders = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    pagination.value.page = 1
+    loadOrders()
+  }, 500)
+}
+
+// Реактивные фильтры - немедленная реакция для select и date
+watch(() => filters.value.status, () => {
+  pagination.value.page = 1
+  loadOrders()
+})
+
+watch(() => filters.value.startDate, () => {
+  pagination.value.page = 1
+  loadOrders()
+})
+
+watch(() => filters.value.endDate, () => {
+  pagination.value.page = 1
+  loadOrders()
+})
+
+watch(() => filters.value.minTotal, () => {
+  pagination.value.page = 1
+  loadOrders()
+})
+
+watch(() => filters.value.maxTotal, () => {
+  pagination.value.page = 1
+  loadOrders()
+})
+
+// Debounced реакция для текстовых полей
+watch(() => filters.value.username, () => {
+  debouncedLoadOrders()
+})
+
+// Поиск по номеру заказа работает на клиенте через filteredOrders, не требует watch
 
 onMounted(async () => {
   await loadUsers()

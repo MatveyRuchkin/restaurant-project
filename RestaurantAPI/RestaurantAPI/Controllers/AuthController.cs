@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using RestaurantAPI.DTOs;
 using RestaurantAPI.Models;
 using RestaurantAPI.Services;
+using RestaurantAPI.Constants;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -20,7 +21,7 @@ namespace RestaurantAPI.Controllers
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
-            RestaurantDbContext context, 
+            RestaurantDbContext context,
             IConfiguration config,
             IPasswordService passwordService,
             ILogger<AuthController> logger)
@@ -31,13 +32,31 @@ namespace RestaurantAPI.Controllers
             _logger = logger;
         }
 
-        // POST: api/Auth/register
+        /// <summary>
+        /// Регистрация нового пользователя с ролью User
+        /// </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register(UserLoginDto dto)
+        public async Task<IActionResult> Register(UserRegisterDto dto)
         {
             try
             {
-                if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (dto.Password != dto.ConfirmPassword)
+                {
+                    return BadRequest("Пароли не совпадают");
+                }
+
+                var (isValid, errorMessage) = _passwordService.ValidatePasswordRequirements(dto.Password);
+                if (!isValid)
+                {
+                    return BadRequest(errorMessage);
+                }
+
+                if (await _context.Users.AnyAsync(u => u.Username == dto.Username && !u.IsDeleted))
                 {
                     _logger.LogWarning("Попытка регистрации с существующим именем пользователя: {Username}", dto.Username);
                     return BadRequest("Пользователь уже существует.");
@@ -45,12 +64,12 @@ namespace RestaurantAPI.Controllers
 
                 var hashedPassword = _passwordService.HashPassword(dto.Password);
 
-                var roleId = new Guid("be81b9ce-fd34-47d4-b9e4-82c0e811a9ab"); 
-                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
+                var role = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Name == Roles.User && !r.IsDeleted);
                 if (role == null)
                 {
-                    _logger.LogError("Роль с Id {RoleId} не найдена при регистрации", roleId);
-                    return BadRequest("Роль не найдена");
+                    _logger.LogError("Роль 'User' не найдена при регистрации");
+                    return BadRequest("Роль 'User' не найдена. Обратитесь к администратору.");
                 }
 
                 var user = new User
@@ -61,7 +80,7 @@ namespace RestaurantAPI.Controllers
                     RoleId = role.Id
                 };
 
-                _context.Users.Add(user);
+                await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Пользователь {Username} успешно зарегистрирован с ролью {RoleName}", 
@@ -76,15 +95,22 @@ namespace RestaurantAPI.Controllers
             }
         }
 
-        // POST: api/Auth/login
+        /// <summary>
+        /// Аутентификация пользователя и выдача JWT токена
+        /// </summary>
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponseDto>> Login(UserLoginDto dto)
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
                 var user = await _context.Users
                     .Include(u => u.Role)
-                    .FirstOrDefaultAsync(u => u.Username == dto.Username);
+                    .FirstOrDefaultAsync(u => u.Username == dto.Username && !u.IsDeleted);
                 
                 if (user == null || !_passwordService.VerifyPassword(dto.Password, user.PasswordHash))
                 {
@@ -127,7 +153,7 @@ namespace RestaurantAPI.Controllers
             var jwtKey = _config["Jwt:Key"];
             var jwtIssuer = _config["Jwt:Issuer"] ?? "RestaurantAPI";
 
-            var roleName = user.Role?.Name ?? "User";
+            var roleName = user.Role?.Name ?? Roles.User;
 
             var claims = new[]
             {

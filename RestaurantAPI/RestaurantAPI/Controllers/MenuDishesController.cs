@@ -1,15 +1,18 @@
-﻿using System;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
+using RestaurantAPI.Exceptions;
+using RestaurantAPI.Helpers;
 using RestaurantAPI.Models;
-using Microsoft.AspNetCore.Authorization;
+using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class MenuDishesController : ControllerBase
+    public class MenuDishesController : BaseController
     {
         private readonly RestaurantDbContext _context;
         private readonly ILogger<MenuDishesController> _logger;
@@ -20,10 +23,9 @@ namespace RestaurantAPI.Controllers
             _logger = logger;
         }
 
-        // GET: api/MenuDishes - доступно всем авторизованным
+        // GET: api/MenuDishes - доступно всем (включая неавторизованных)
         // Поддерживает фильтрацию, сортировку и пагинацию
         [HttpGet]
-        [Authorize]
         public async Task<ActionResult> GetMenuDishes(
             Guid? menuId = null,
             Guid? dishId = null,
@@ -84,25 +86,23 @@ namespace RestaurantAPI.Controllers
                     "Получен список блюд в меню. Количество: {Count}, Всего: {Total}, Страница: {Page}",
                     menuDishes.Count, totalCount, page);
 
-                return Ok(new
+                return Ok(new PagedResult<MenuDishReadDto>
                 {
-                    data = menuDishes,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = menuDishes,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка блюд в меню");
-                return StatusCode(500, "Произошла ошибка при получении списка блюд в меню.");
+                throw;
             }
         }
 
-        // GET: api/MenuDishes/5 - доступно всем авторизованным
+        // GET: api/MenuDishes/5 - доступно всем (включая неавторизованных)
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<ActionResult<MenuDishReadDto>> GetMenuDish(Guid id)
         {
             try
@@ -115,7 +115,7 @@ namespace RestaurantAPI.Controllers
                 if (menuDish == null)
                 {
                     _logger.LogWarning("Блюдо в меню с Id {MenuDishId} не найдено", id);
-                    return NotFound();
+                    throw new NotFoundException("Блюдо в меню не найдено");
                 }
 
                 var dto = new MenuDishReadDto
@@ -129,10 +129,14 @@ namespace RestaurantAPI.Controllers
 
                 return Ok(dto);
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении блюда в меню {MenuDishId}", id);
-                return StatusCode(500, "Произошла ошибка при получении блюда в меню.");
+                throw;
             }
         }
 
@@ -143,7 +147,7 @@ namespace RestaurantAPI.Controllers
         {
             try
             {
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
                 if (await _context.MenuDishes.AnyAsync(md =>
@@ -153,21 +157,21 @@ namespace RestaurantAPI.Controllers
                 {
                     _logger.LogWarning("Попытка создания дубликата блюда в меню. MenuId: {MenuId}, DishId: {DishId}",
                         createDto.MenuId, createDto.DishId);
-                    return BadRequest("Это блюдо уже добавлено в данное меню.");
+                    throw new BadRequestException("Это блюдо уже добавлено в данное меню");
                 }
 
                 var menu = await _context.Menus.FirstOrDefaultAsync(m => m.Id == createDto.MenuId && !m.IsDeleted);
                 if (menu == null)
                 {
                     _logger.LogWarning("Попытка создания блюда в меню с несуществующим меню: {MenuId}", createDto.MenuId);
-                    return BadRequest("Меню не найдено.");
+                    throw new NotFoundException("Меню не найдено");
                 }
 
                 var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == createDto.DishId && !d.IsDeleted);
                 if (dish == null)
                 {
                     _logger.LogWarning("Попытка создания блюда в меню с несуществующим блюдом: {DishId}", createDto.DishId);
-                    return BadRequest("Блюдо не найдено.");
+                    throw new NotFoundException("Блюдо не найдено");
                 }
 
                 var menuDish = new MenuDish
@@ -195,10 +199,18 @@ namespace RestaurantAPI.Controllers
 
                 return CreatedAtAction(nameof(GetMenuDish), new { id = menuDish.Id }, readDto);
             }
+            catch (BadRequestException)
+            {
+                throw;
+            }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при создании блюда в меню");
-                return StatusCode(500, "Произошла ошибка при создании блюда в меню.");
+                throw;
             }
         }
 
@@ -213,17 +225,17 @@ namespace RestaurantAPI.Controllers
                 if (menuDish == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующего блюда в меню: {MenuDishId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Блюдо в меню не найдено");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 var menu = await _context.Menus.FirstOrDefaultAsync(m => m.Id == updateDto.MenuId && !m.IsDeleted);
                 if (menu == null)
                 {
                     _logger.LogWarning("Попытка обновления блюда в меню {MenuDishId} с несуществующим меню: {MenuId}",
                         id, updateDto.MenuId);
-                    return BadRequest("Меню не найдено.");
+                    throw new NotFoundException("Меню не найдено");
                 }
 
                 var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == updateDto.DishId && !d.IsDeleted);
@@ -231,7 +243,7 @@ namespace RestaurantAPI.Controllers
                 {
                     _logger.LogWarning("Попытка обновления блюда в меню {MenuDishId} с несуществующим блюдом: {DishId}",
                         id, updateDto.DishId);
-                    return BadRequest("Блюдо не найдено.");
+                    throw new NotFoundException("Блюдо не найдено");
                 }
 
                 menuDish.MenuId = updateDto.MenuId;
@@ -245,10 +257,14 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении блюда в меню {MenuDishId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении блюда в меню.");
+                throw;
             }
         }
 
@@ -266,10 +282,10 @@ namespace RestaurantAPI.Controllers
                 if (menuDish == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующего блюда в меню: {MenuDishId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Блюдо в меню не найдено");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 menuDish.IsDeleted = true;
                 menuDish.DeletedAt = DateTime.UtcNow;
@@ -282,10 +298,14 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении блюда в меню {MenuDishId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении блюда в меню.");
+                throw;
             }
         }
     }

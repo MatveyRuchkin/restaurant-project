@@ -39,6 +39,10 @@ public partial class RestaurantDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<Cart> Carts { get; set; }
+
+    public virtual DbSet<CartItem> CartItems { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Category>(entity =>
@@ -213,9 +217,6 @@ public partial class RestaurantDbContext : DbContext
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.DeletedAt).HasColumnType("datetime");
             entity.Property(e => e.DeletedBy).HasMaxLength(100);
-            entity.Property(e => e.OrderDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
@@ -296,6 +297,51 @@ public partial class RestaurantDbContext : DbContext
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Users_Roles");
+        });
+
+        modelBuilder.Entity<Cart>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Carts__3214EC07");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            // Один пользователь = одна корзина
+            entity.HasIndex(e => e.UserId).IsUnique();
+
+            entity.HasOne(d => d.User)
+                .WithOne(u => u.Cart)
+                .HasForeignKey<Cart>(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Carts_Users");
+        });
+
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__CartItems__3214EC07");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Quantity).HasDefaultValue(1);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.Notes).HasMaxLength(500);
+
+            entity.HasOne(d => d.Cart)
+                .WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.CartId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_CartItems_Carts");
+
+            entity.HasOne(d => d.Dish)
+                .WithMany()
+                .HasForeignKey(d => d.DishId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_CartItems_Dishes");
         });
 
         OnModelCreatingPartial(modelBuilder);

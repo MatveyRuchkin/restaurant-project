@@ -1,27 +1,95 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
 using RestaurantAPI.Models;
+using RestaurantAPI.Constants;
+using RestaurantAPI.Helpers;
+using RestaurantAPI.Services;
+using RestaurantAPI.Exceptions;
 using System.Security.Claims;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class OrdersController : ControllerBase
+    public class OrdersController : BaseController
     {
         private readonly RestaurantDbContext _context;
+        private readonly IBusinessValidationService _validationService;
+        private readonly IMapper _mapper;
         private readonly ILogger<OrdersController> _logger;
 
-        public OrdersController(RestaurantDbContext context, ILogger<OrdersController> logger)
+        public OrdersController(
+            RestaurantDbContext context,
+            IBusinessValidationService validationService,
+            IMapper mapper,
+            ILogger<OrdersController> logger)
         {
             _context = context;
+            _validationService = validationService;
+            _mapper = mapper;
             _logger = logger;
         }
 
-        // GET: api/Orders - официанты и админы видят все заказы
-        // Поддерживает фильтрацию, сортировку и пагинацию
+        /// <summary>
+        /// Получение заказов текущего пользователя с пагинацией
+        /// </summary>
+        [HttpGet("MyOrders")]
+        [Authorize]
+        public async Task<ActionResult<PagedResult<OrderReadDto>>> GetMyOrders(
+            int page = 1,
+            int pageSize = 20)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                {
+                    throw new UnauthorizedException("Не удалось определить пользователя");
+                }
+
+                var query = _context.Orders
+                    .Where(o => o.UserId == userId.Value && !o.IsDeleted)
+                    .Include(o => o.User)
+                    .OrderByDescending(o => o.CreatedAt);
+
+                var totalCount = await query.CountAsync();
+
+                var orders = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var orderDtos = _mapper.Map<IEnumerable<OrderReadDto>>(orders);
+
+                _logger.LogInformation("Получены заказы пользователя {UserId}. Количество: {Count}, Всего: {Total}, Страница: {Page}", 
+                    userId.Value, orders.Count, totalCount, page);
+
+                return Ok(new PagedResult<OrderReadDto>
+                {
+                    Data = orderDtos,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
+                });
+            }
+            catch (UnauthorizedException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении заказов пользователя");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Получение всех заказов (только для официантов и админов)
+        /// Поддерживает фильтрацию по userId, status, дате, сумме, сортировку и пагинацию
+        /// </summary>
         [HttpGet]
         [Authorize(Policy = "Waiter")]
         public async Task<ActionResult> GetOrders(
@@ -39,33 +107,31 @@ namespace RestaurantAPI.Controllers
             try
             {
                 var query = _context.Orders
+                    .Where(o => !o.IsDeleted)
                     .Include(o => o.User)
-                    .Where(o => !o.IsDeleted);
+                    .AsQueryable();
 
-                // Фильтрация по пользователю
                 if (userId.HasValue)
                 {
                     query = query.Where(o => o.UserId == userId.Value);
                 }
 
-                // Фильтрация по статусу
                 if (!string.IsNullOrWhiteSpace(status))
                 {
                     query = query.Where(o => o.Status == status);
                 }
 
-                // Фильтрация по дате
+                // Фильтрация по дате (используем CreatedAt вместо OrderDate)
                 if (startDate.HasValue)
                 {
-                    query = query.Where(o => o.OrderDate >= startDate.Value);
+                    query = query.Where(o => o.CreatedAt >= startDate.Value);
                 }
 
                 if (endDate.HasValue)
                 {
-                    query = query.Where(o => o.OrderDate <= endDate.Value);
+                    query = query.Where(o => o.CreatedAt <= endDate.Value);
                 }
 
-                // Фильтрация по сумме
                 if (minTotal.HasValue)
                 {
                     query = query.Where(o => o.Total >= minTotal.Value);
@@ -76,22 +142,21 @@ namespace RestaurantAPI.Controllers
                     query = query.Where(o => o.Total <= maxTotal.Value);
                 }
 
-                // Сортировка
                 query = sortBy.ToLower() switch
                 {
                     "total" => order.ToLower() == "desc"
                         ? query.OrderByDescending(o => o.Total)
                         : query.OrderBy(o => o.Total),
-                    "orderdate" => order.ToLower() == "desc"
-                        ? query.OrderByDescending(o => o.OrderDate)
-                        : query.OrderBy(o => o.OrderDate),
+                    "orderdate" or "createdat" => order.ToLower() == "desc"
+                        ? query.OrderByDescending(o => o.CreatedAt)
+                        : query.OrderBy(o => o.CreatedAt),
                     "status" => order.ToLower() == "desc"
                         ? query.OrderByDescending(o => o.Status)
                         : query.OrderBy(o => o.Status),
                     "username" => order.ToLower() == "desc"
                         ? query.OrderByDescending(o => o.User.Username)
                         : query.OrderBy(o => o.User.Username),
-                    _ => query.OrderByDescending(o => o.OrderDate)
+                    _ => query.OrderByDescending(o => o.CreatedAt)
                 };
 
                 // Подсчет общего количества
@@ -101,37 +166,32 @@ namespace RestaurantAPI.Controllers
                 var orders = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(o => new OrderReadDto
-                    {
-                        Id = o.Id,
-                        Username = o.User.Username,
-                        OrderDate = o.OrderDate,
-                        Status = o.Status,
-                        Total = o.Total
-                    })
                     .ToListAsync();
+
+                var orderDtos = _mapper.Map<IEnumerable<OrderReadDto>>(orders);
 
                 _logger.LogInformation(
                     "Получен список заказов. Количество: {Count}, Всего: {Total}, Страница: {Page}",
                     orders.Count, totalCount, page);
 
-                return Ok(new
+                return Ok(new PagedResult<OrderReadDto>
                 {
-                    data = orders,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = orderDtos,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка заказов");
-                return StatusCode(500, "Произошла ошибка при получении списка заказов.");
+                throw;
             }
         }
 
-        // GET: api/Orders/5 - пользователь видит только свои заказы, официант/админ - все
+        /// <summary>
+        /// Получение заказа по ID. Пользователи видят только свои заказы, официанты и админы - все
+        /// </summary>
         [HttpGet("{id}")]
         [Authorize]
         public async Task<ActionResult<OrderReadDto>> GetOrder(Guid id)
@@ -145,78 +205,118 @@ namespace RestaurantAPI.Controllers
                 if (order == null)
                 {
                     _logger.LogWarning("Заказ с Id {OrderId} не найден", id);
-                    return NotFound();
+                    throw new NotFoundException("Заказ не найден");
                 }
 
-                var userIdClaim = User.FindFirst("userId")?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var userId = GetCurrentUserId();
+                var userRole = GetCurrentUserRole();
 
-                if (userRole != "Admin" && userRole != "Waiter" &&
-                    userIdClaim != null && Guid.Parse(userIdClaim) != order.UserId)
+                if (!IsAdmin() && !IsWaiter() &&
+                    userId.HasValue && userId.Value != order.UserId)
                 {
                     _logger.LogWarning("Попытка доступа к чужому заказу {OrderId} пользователем {UserId}",
-                        id, userIdClaim);
-                    return Forbid();
+                        id, userId);
+                    throw new ForbiddenException("Доступ запрещен");
                 }
 
-                var dto = new OrderReadDto
-                {
-                    Id = order.Id,
-                    Username = order.User.Username,
-                    OrderDate = order.OrderDate,
-                    Status = order.Status,
-                    Total = order.Total
-                };
-
+                var dto = _mapper.Map<OrderReadDto>(order);
                 return Ok(dto);
+            }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (ForbiddenException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении заказа {OrderId}", id);
-                return StatusCode(500, "Произошла ошибка при получении заказа.");
+                throw;
             }
         }
 
-        // POST: api/Orders - любой авторизованный пользователь может создать заказ
+        /// <summary>
+        /// Создание нового заказа. Любой авторизованный пользователь может создать заказ только для себя
+        /// </summary>
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<OrderReadDto>> CreateOrder(OrderCreateDto createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var userIdClaim = User.FindFirst("userId")?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var userId = GetCurrentUserId();
+                var userRole = GetCurrentUserRole();
 
-                if (userRole != "Admin" && userRole != "Waiter" &&
-                    userIdClaim != null && Guid.Parse(userIdClaim) != createDto.UserId)
+                if (!IsAdmin() && !IsWaiter() &&
+                    userId.HasValue && userId.Value != createDto.UserId)
                 {
                     _logger.LogWarning("Попытка создания заказа для другого пользователя. UserId: {UserId}, RequestedUserId: {RequestedUserId}",
-                        userIdClaim, createDto.UserId);
-                    return Forbid();
+                        userId, createDto.UserId);
+                    throw new ForbiddenException("Недостаточно прав для создания заказа для другого пользователя");
                 }
 
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == createDto.UserId && !u.IsDeleted);
-                if (user == null)
-                {
-                    _logger.LogWarning("Попытка создания заказа для несуществующего пользователя: {UserId}", createDto.UserId);
-                    return BadRequest("Пользователь не найден");
-                }
+                await _validationService.ValidateOrderCreationAsync(createDto);
 
-                if (createDto.Items == null || createDto.Items.Count == 0)
-                {
-                    _logger.LogWarning("Попытка создания заказа без блюд для пользователя: {UserId}", createDto.UserId);
-                    return BadRequest("Заказ должен содержать хотя бы одно блюдо");
-                }
-
-                var username = User?.Identity?.Name ?? "System";
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == createDto.UserId && !u.IsDeleted);
+                var currentUsername = GetCurrentUsername();
+                
+                // Для пользователя "generator" используем его имя в CreatedBy, иначе - имя текущего пользователя
+                var createdBy = user != null && user.Username.Equals("generator", StringComparison.OrdinalIgnoreCase)
+                    ? "generator"
+                    : currentUsername;
+                
                 decimal total = 0;
+                
+                _logger.LogInformation("Создание заказа. UserId: {UserId}, Notes: {Notes}, ItemsCount: {ItemsCount}", 
+                    createDto.UserId, createDto.Notes ?? "null", createDto.Items?.Count ?? 0);
+                
+                // Используем UTC время
+                DateTime createdAtValue;
+                if (createDto.OrderDate.HasValue)
+                {
+                    var incomingDate = createDto.OrderDate.Value;
+                    // Используем UTC время
+                    if (incomingDate.Kind == DateTimeKind.Local)
+                    {
+                        createdAtValue = incomingDate.ToUniversalTime();
+                    }
+                    else if (incomingDate.Kind == DateTimeKind.Unspecified)
+                    {
+                        // Предполагаем, что это UTC время
+                        createdAtValue = DateTime.SpecifyKind(incomingDate, DateTimeKind.Utc);
+                    }
+                    else
+                    {
+                        createdAtValue = incomingDate; // Уже UTC время
+                    }
+                }
+                else
+                {
+                    createdAtValue = DateTime.UtcNow; // UTC время
+                }
+                
+                _logger.LogInformation("Создание заказа. Входящая дата: {IncomingDate}, Kind: {Kind}, Результирующая дата: {CreatedAt}, Year: {Year}", 
+                    createDto.OrderDate, 
+                    createDto.OrderDate?.Kind, 
+                    createdAtValue, 
+                    createdAtValue.Year);
+
                 var order = new Order
                 {
                     UserId = createDto.UserId,
-                    OrderDate = DateTime.UtcNow,
-                    Status = "Pending",
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = username
+                    Status = OrderStatuses.Pending,
+                    Notes = !string.IsNullOrWhiteSpace(createDto.Notes) ? createDto.Notes.Trim() : null,
+                    CreatedAt = createdAtValue,
+                    CreatedBy = createdBy
                 };
 
                 _context.Orders.Add(order);
@@ -226,93 +326,82 @@ namespace RestaurantAPI.Controllers
                 {
                     var dish = await _context.Dishes
                         .FirstOrDefaultAsync(d => d.Id == itemDto.DishId && !d.IsDeleted);
-
-                    if (dish == null)
-                    {
-                        _logger.LogWarning("Попытка добавить несуществующее блюдо {DishId} в заказ {OrderId}",
-                            itemDto.DishId, order.Id);
-                        return BadRequest($"Блюдо с ID {itemDto.DishId} не найдено или удалено");
-                    }
-
-                    if (itemDto.Quantity <= 0)
-                    {
-                        _logger.LogWarning("Попытка добавить блюдо {DishId} с неверным количеством {Quantity} в заказ {OrderId}",
-                            itemDto.DishId, itemDto.Quantity, order.Id);
-                        return BadRequest($"Количество блюда '{dish.Name}' должно быть больше 0");
-                    }
-
-                    if (itemDto.Quantity > 100)
-                    {
-                        _logger.LogWarning("Попытка добавить блюдо {DishId} с превышающим количеством {Quantity} в заказ {OrderId}",
-                            itemDto.DishId, itemDto.Quantity, order.Id);
-                        return BadRequest($"Количество блюда '{dish.Name}' не может превышать 100");
-                    }
-
+                    
+                    _logger.LogInformation("Добавление элемента заказа. DishId: {DishId}, Quantity: {Quantity}, Notes: {Notes}", 
+                        itemDto.DishId, itemDto.Quantity, itemDto.Notes ?? "null");
+                    
                     var orderItem = new OrderItem
                     {
                         OrderId = order.Id,
                         DishId = itemDto.DishId,
                         Quantity = itemDto.Quantity,
-                        Price = dish.Price,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedBy = username
+                        Price = dish!.Price,
+                        Notes = !string.IsNullOrWhiteSpace(itemDto.Notes) ? itemDto.Notes.Trim() : null,
+                        CreatedAt = DateTime.UtcNow, // UTC время
+                        CreatedBy = createdBy
                     };
 
                     total += dish.Price * itemDto.Quantity;
                     _context.OrderItems.Add(orderItem);
                 }
 
-                if (total < 0.01m)
-                {
-                    _logger.LogWarning("Попытка создания заказа {OrderId} с нулевой суммой", order.Id);
-                    return BadRequest("Сумма заказа должна быть больше 0");
-                }
-
                 order.Total = total;
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 _logger.LogInformation("Заказ {OrderId} создан пользователем {UserId}. Сумма: {Total}, Блюд: {ItemsCount}",
                     order.Id, createDto.UserId, total, createDto.Items.Count);
 
-                var readDto = new OrderReadDto
-                {
-                    Id = order.Id,
-                    Username = user.Username,
-                    OrderDate = order.OrderDate,
-                    Status = order.Status,
-                    Total = order.Total
-                };
+                var readDto = _mapper.Map<OrderReadDto>(order);
+                readDto.Username = user!.Username;
 
                 return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, readDto);
             }
+            catch (BadRequestException)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            catch (ForbiddenException)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Ошибка при создании заказа для пользователя {UserId}", createDto.UserId);
-                return StatusCode(500, "Произошла ошибка при создании заказа.");
+                throw;
             }
         }
 
-        // PUT: api/Orders/5 - официанты и админы могут обновлять статус
+        /// <summary>
+        /// Обновление статуса заказа (только для официантов и админов)
+        /// </summary>
         [HttpPut("{id}")]
         [Authorize(Policy = "Waiter")]
         public async Task<IActionResult> UpdateOrder(Guid id, OrderUpdateDto updateDto)
         {
             try
             {
-                var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
+                var order = await _context.Orders
+                    .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
                 if (order == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующего заказа: {OrderId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Заказ не найден");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                await _validationService.ValidateOrderStatusChangeAsync(order, updateDto.Status);
+
+                var username = GetCurrentUsername();
 
                 var oldStatus = order.Status;
                 order.Status = updateDto.Status;
-                order.UpdatedAt = DateTime.UtcNow;
+                order.UpdatedAt = DateTime.UtcNow; // UTC время
                 order.UpdatedBy = username;
 
+                _context.Orders.Update(order);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Заказ {OrderId} обновлен. Статус изменен с {OldStatus} на {NewStatus} пользователем {Username}",
@@ -320,43 +409,59 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении заказа {OrderId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении заказа.");
+                throw;
             }
         }
 
-        // DELETE: api/Orders/5 - только админ
+        /// <summary>
+        /// Мягкое удаление заказа (только для админов)
+        /// </summary>
         [HttpDelete("{id}")]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> DeleteOrder(Guid id)
         {
             try
             {
-                var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
+                var order = await _context.Orders
+                    .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
                 if (order == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующего заказа: {OrderId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Заказ не найден");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 order.IsDeleted = true;
-                order.DeletedAt = DateTime.UtcNow;
+                order.DeletedAt = DateTime.UtcNow; // UTC время
                 order.DeletedBy = username;
 
+                _context.Orders.Update(order);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Заказ {OrderId} удален администратором {Username}", id, username);
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении заказа {OrderId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении заказа.");
+                throw;
             }
         }
     }

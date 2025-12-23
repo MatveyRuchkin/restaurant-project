@@ -1,29 +1,41 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
+using RestaurantAPI.Exceptions;
+using RestaurantAPI.Helpers;
 using RestaurantAPI.Models;
+using RestaurantAPI.Services;
+using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class MenusController : ControllerBase
+    public class MenusController : BaseController
     {
         private readonly RestaurantDbContext _context;
+        private readonly IBusinessValidationService _validationService;
+        private readonly IMapper _mapper;
         private readonly ILogger<MenusController> _logger;
 
-        public MenusController(RestaurantDbContext context, ILogger<MenusController> logger)
+        public MenusController(
+            RestaurantDbContext context,
+            IBusinessValidationService validationService,
+            IMapper mapper,
+            ILogger<MenusController> logger)
         {
             _context = context;
+            _validationService = validationService;
+            _mapper = mapper;
             _logger = logger;
         }
 
-        // GET: api/Menus - доступно всем авторизованным
+        // GET: api/Menus - доступно всем (включая неавторизованных)
         // Поддерживает фильтрацию, сортировку и пагинацию
         [HttpGet]
-        [Authorize]
-        public async Task<ActionResult> GetMenus(
+        public async Task<ActionResult<PagedResult<MenuReadDto>>> GetMenus(
             string? search = null,
             string sortBy = "name",
             string order = "asc",
@@ -33,7 +45,8 @@ namespace RestaurantAPI.Controllers
             try
             {
                 var query = _context.Menus
-                    .Where(m => !m.IsDeleted);
+                    .Where(m => !m.IsDeleted)
+                    .AsQueryable();
 
                 // Поиск по названию
                 if (!string.IsNullOrWhiteSpace(search))
@@ -57,60 +70,55 @@ namespace RestaurantAPI.Controllers
                 var menus = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(m => new MenuReadDto
-                    {
-                        Id = m.Id,
-                        Name = m.Name
-                    })
                     .ToListAsync();
+
+                var menuDtos = _mapper.Map<IEnumerable<MenuReadDto>>(menus);
 
                 _logger.LogInformation(
                     "Получен список меню. Количество: {Count}, Всего: {Total}, Страница: {Page}",
                     menus.Count, totalCount, page);
 
-                return Ok(new
+                return Ok(new PagedResult<MenuReadDto>
                 {
-                    data = menus,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = menuDtos,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка меню");
-                return StatusCode(500, "Произошла ошибка при получении списка меню.");
+                throw;
             }
         }
 
-        // GET: api/Menus/5 - доступно всем авторизованным
+        // GET: api/Menus/5 - доступно всем (включая неавторизованных)
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<ActionResult<MenuReadDto>> GetMenu(Guid id)
         {
             try
             {
-                var menu = await _context.Menus.FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
+                var menu = await _context.Menus
+                    .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
 
                 if (menu == null)
                 {
                     _logger.LogWarning("Меню с Id {MenuId} не найдено", id);
-                    return NotFound();
+                    throw new NotFoundException("Меню не найдено");
                 }
 
-                var dto = new MenuReadDto
-                {
-                    Id = menu.Id,
-                    Name = menu.Name
-                };
-
+                var dto = _mapper.Map<MenuReadDto>(menu);
                 return Ok(dto);
+            }
+            catch (NotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении меню {MenuId}", id);
-                return StatusCode(500, "Произошла ошибка при получении меню.");
+                throw;
             }
         }
 
@@ -119,41 +127,42 @@ namespace RestaurantAPI.Controllers
         [Authorize(Policy = "Admin")]
         public async Task<ActionResult<MenuReadDto>> CreateMenu(MenuCreateDto createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
                 if (await _context.Menus.AnyAsync(m => m.Name == createDto.Name && !m.IsDeleted))
                 {
                     _logger.LogWarning("Попытка создания меню с существующим названием: {Name}", createDto.Name);
-                    return BadRequest("Меню с таким названием уже существует.");
+                    throw new BadRequestException("Меню с таким названием уже существует.");
                 }
 
-                var menu = new Menu
-                {
-                    Name = createDto.Name,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = username
-                };
+                var menu = _mapper.Map<Menu>(createDto);
+                menu.CreatedAt = DateTime.UtcNow;
+                menu.CreatedBy = username;
 
-                _context.Menus.Add(menu);
+                await _context.Menus.AddAsync(menu);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Меню {Name} создано администратором {Username}", menu.Name, username);
 
-                var readDto = new MenuReadDto
-                {
-                    Id = menu.Id,
-                    Name = menu.Name
-                };
-
+                var readDto = _mapper.Map<MenuReadDto>(menu);
                 return CreatedAtAction(nameof(GetMenu), new { id = menu.Id }, readDto);
+            }
+            catch (BadRequestException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при создании меню {Name}", createDto.Name);
-                return StatusCode(500, "Произошла ошибка при создании меню.");
+                throw;
             }
         }
 
@@ -162,40 +171,54 @@ namespace RestaurantAPI.Controllers
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> UpdateMenu(Guid id, MenuUpdateDto updateDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var menu = await _context.Menus.FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
+                var menu = await _context.Menus
+                    .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
                 if (menu == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующего меню: {MenuId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Меню не найдено");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
-                if (await _context.Menus.AnyAsync(m =>
-                    m.Name == updateDto.Name && m.Id != id && !m.IsDeleted))
+                if (await _context.Menus.AnyAsync(m => m.Name == updateDto.Name && m.Id != id && !m.IsDeleted))
                 {
                     _logger.LogWarning("Попытка обновления меню {MenuId} с существующим названием: {Name}",
                         id, updateDto.Name);
-                    return BadRequest("Меню с таким названием уже существует.");
+                    throw new BadRequestException("Меню с таким названием уже существует.");
                 }
 
-                menu.Name = updateDto.Name;
+                _mapper.Map(updateDto, menu);
                 menu.UpdatedAt = DateTime.UtcNow;
                 menu.UpdatedBy = username;
 
+                _context.Menus.Update(menu);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Меню {MenuId} обновлено администратором {Username}", id, username);
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении меню {MenuId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении меню.");
+                throw;
             }
         }
 
@@ -206,19 +229,24 @@ namespace RestaurantAPI.Controllers
         {
             try
             {
-                var menu = await _context.Menus.FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
+                var menu = await _context.Menus
+                    .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
                 if (menu == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующего меню: {MenuId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Меню не найдено");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                // Валидация бизнес-логики удаления
+                await _validationService.ValidateMenuDeletionAsync(id);
+
+                var username = GetCurrentUsername();
 
                 menu.IsDeleted = true;
                 menu.DeletedAt = DateTime.UtcNow;
                 menu.DeletedBy = username;
 
+                _context.Menus.Update(menu);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Меню {MenuId} ({Name}) удалено администратором {Username}",
@@ -226,10 +254,14 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении меню {MenuId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении меню.");
+                throw;
             }
         }
     }

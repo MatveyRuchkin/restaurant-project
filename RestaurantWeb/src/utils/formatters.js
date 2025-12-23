@@ -29,8 +29,8 @@ export const formatDateShort = (dateString) => {
 
 /**
  * Форматирует номер заказа в читаемый вид
- * Формат: ORD + HHmmss + XXXX (префикс + время с секундами + 4 символа из GUID)
- * Пример: ORD143045A1B2
+ * Формат: ORD + HHmmss + - + XXXXX (префикс + время с секундами + дефис + 5 символов из GUID)
+ * Пример: ORD143045-A1B2C
  * 
  * @param {string|Guid} orderId - ID заказа (GUID)
  * @param {string|Date} orderDate - Дата заказа
@@ -43,8 +43,8 @@ export const formatOrderNumber = (orderId, orderDate) => {
   }
   
   try {
-    // Берем первые 4 символа GUID без дефисов и переводим в верхний регистр
-    const guidPart = orderId.toString().replace(/-/g, '').substring(0, 4).toUpperCase()
+    // Берем первые 5 символов GUID без дефисов и переводим в верхний регистр
+    const guidPart = orderId.toString().replace(/-/g, '').substring(0, 5).toUpperCase()
     
     // Парсим дату (ожидается ISO строка с UTC)
     const date = new Date(orderDate)
@@ -55,7 +55,7 @@ export const formatOrderNumber = (orderId, orderDate) => {
     const seconds = String(date.getUTCSeconds()).padStart(2, '0')
     const timePart = `${hours}${minutes}${seconds}`
     
-    return `ORD${timePart}${guidPart}`
+    return `ORD${timePart}-${guidPart}`
   } catch (error) {
     console.error('Ошибка форматирования номера заказа:', error)
     // В случае ошибки возвращаем короткую версию GUID с префиксом

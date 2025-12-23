@@ -1,30 +1,38 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
+using RestaurantAPI.Exceptions;
+using RestaurantAPI.Helpers;
 using RestaurantAPI.Models;
-using System.Security.Claims;
+using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "Admin")] // Весь контроллер только для админов
-    public class RolesController : ControllerBase
+    [Authorize(Policy = "Admin")]
+    public class RolesController : BaseController
     {
         private readonly RestaurantDbContext _context;
+        private readonly IMapper _mapper;
         private readonly ILogger<RolesController> _logger;
 
-        public RolesController(RestaurantDbContext context, ILogger<RolesController> logger)
+        public RolesController(
+            RestaurantDbContext context,
+            IMapper mapper,
+            ILogger<RolesController> logger)
         {
             _context = context;
+            _mapper = mapper;
             _logger = logger;
         }
 
         // GET: api/Roles
         // Поддерживает фильтрацию, сортировку и пагинацию
         [HttpGet]
-        public async Task<ActionResult> GetRoles(
+        public async Task<ActionResult<PagedResult<RoleReadDto>>> GetRoles(
             string? search = null,
             string sortBy = "name",
             string order = "asc",
@@ -34,7 +42,8 @@ namespace RestaurantAPI.Controllers
             try
             {
                 var query = _context.Roles
-                    .Where(r => !r.IsDeleted);
+                    .Where(r => !r.IsDeleted)
+                    .AsQueryable();
 
                 // Поиск по названию
                 if (!string.IsNullOrWhiteSpace(search))
@@ -52,36 +61,32 @@ namespace RestaurantAPI.Controllers
                 };
 
                 // Подсчет общего количества
-                var totalCount = await query.CountAsync();
+                var totalCount = query.Count();
 
                 // Пагинация
-                var roles = await query
+                var roles = query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(r => new RoleReadDto
-                    {
-                        Id = r.Id,
-                        Name = r.Name
-                    })
-                    .ToListAsync();
+                    .ToList();
+
+                var roleDtos = _mapper.Map<IEnumerable<RoleReadDto>>(roles);
 
                 _logger.LogInformation(
                     "Получен список ролей. Количество: {Count}, Всего: {Total}, Страница: {Page}",
                     roles.Count, totalCount, page);
 
-                return Ok(new
+                return Ok(new PagedResult<RoleReadDto>
                 {
-                    data = roles,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = roleDtos,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка ролей");
-                return StatusCode(500, "Произошла ошибка при получении списка ролей.");
+                throw;
             }
         }
 
@@ -91,26 +96,25 @@ namespace RestaurantAPI.Controllers
         {
             try
             {
-                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
-
+                var role = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
                 if (role == null)
                 {
                     _logger.LogWarning("Роль с Id {RoleId} не найдена", id);
-                    return NotFound();
+                    throw new NotFoundException("Роль не найдена");
                 }
 
-                var dto = new RoleReadDto
-                {
-                    Id = role.Id,
-                    Name = role.Name
-                };
-
+                var dto = _mapper.Map<RoleReadDto>(role);
                 return Ok(dto);
+            }
+            catch (NotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении роли {RoleId}", id);
-                return StatusCode(500, "Произошла ошибка при получении роли.");
+                throw;
             }
         }
 
@@ -118,41 +122,44 @@ namespace RestaurantAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<RoleReadDto>> CreateRole(RoleCreateDto createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
-                if (await _context.Roles.AnyAsync(r => r.Name == createDto.Name && !r.IsDeleted))
+                var existingRole = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Name == createDto.Name && !r.IsDeleted);
+                if (existingRole != null && !existingRole.IsDeleted)
                 {
                     _logger.LogWarning("Попытка создания роли с существующим названием: {Name}", createDto.Name);
-                    return BadRequest("Роль с таким названием уже существует.");
+                    throw new BadRequestException("Роль с таким названием уже существует.");
                 }
 
-                var role = new Role
-                {
-                    Name = createDto.Name,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = username
-                };
+                var role = _mapper.Map<Role>(createDto);
+                role.CreatedAt = DateTime.UtcNow;
+                role.CreatedBy = username;
 
-                _context.Roles.Add(role);
+                await _context.Roles.AddAsync(role);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Роль {Name} создана администратором {Username}", role.Name, username);
 
-                var readDto = new RoleReadDto
-                {
-                    Id = role.Id,
-                    Name = role.Name
-                };
-
+                var readDto = _mapper.Map<RoleReadDto>(role);
                 return CreatedAtAction(nameof(GetRole), new { id = role.Id }, readDto);
+            }
+            catch (BadRequestException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при создании роли {Name}", createDto.Name);
-                return StatusCode(500, "Произошла ошибка при создании роли.");
+                throw;
             }
         }
 
@@ -160,40 +167,56 @@ namespace RestaurantAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRole(Guid id, RoleUpdateDto updateDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+                var role = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
                 if (role == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующей роли: {RoleId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Роль не найдена");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 // Проверка на дубликат
-                if (await _context.Roles.AnyAsync(r =>
-                    r.Name == updateDto.Name && r.Id != id && !r.IsDeleted))
+                var existingRole = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Name == updateDto.Name && r.Id != id && !r.IsDeleted);
+                if (existingRole != null && existingRole.Id != id && !existingRole.IsDeleted)
                 {
                     _logger.LogWarning("Попытка обновления роли {RoleId} с существующим названием: {Name}",
                         id, updateDto.Name);
-                    return BadRequest("Роль с таким названием уже существует.");
+                    throw new BadRequestException("Роль с таким названием уже существует.");
                 }
 
-                role.Name = updateDto.Name;
+                _mapper.Map(updateDto, role);
                 role.UpdatedAt = DateTime.UtcNow;
                 role.UpdatedBy = username;
 
+                _context.Roles.Update(role);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Роль {RoleId} обновлена администратором {Username}", id, username);
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении роли {RoleId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении роли.");
+                throw;
             }
         }
 
@@ -203,19 +226,21 @@ namespace RestaurantAPI.Controllers
         {
             try
             {
-                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+                var role = await _context.Roles
+                    .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
                 if (role == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующей роли: {RoleId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Роль не найдена");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 role.IsDeleted = true;
                 role.DeletedAt = DateTime.UtcNow;
                 role.DeletedBy = username;
 
+                _context.Roles.Update(role);
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Роль {RoleId} ({Name}) удалена администратором {Username}",
@@ -223,10 +248,14 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении роли {RoleId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении роли.");
+                throw;
             }
         }
     }

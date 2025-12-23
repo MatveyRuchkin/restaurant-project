@@ -4,11 +4,14 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using RestaurantAPI.Models;
 using RestaurantAPI.Services;
+using RestaurantAPI.Middleware;
+using RestaurantAPI.Mappings;
+using RestaurantAPI.Constants;
 using Serilog;
 using System.Text;
 using System.Text.Json;
 
-// ===== Настройка Serilog =====
+// Настройка логирования Serilog
 Serilog.Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .WriteTo.File(
@@ -24,30 +27,41 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Используем Serilog вместо встроенного логирования
     builder.Host.UseSerilog();
 
-    // ===== Подключаем базу данных =====
+    // Подключение базы данных
     builder.Services.AddDbContext<RestaurantDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-    // ===== Регистрация сервисов =====
+    // Регистрация сервисов
     builder.Services.AddScoped<IPasswordService, PasswordService>();
+    builder.Services.AddScoped<IBusinessValidationService, BusinessValidationService>();
+    builder.Services.AddScoped<IOrderService, OrderService>();
+    builder.Services.AddScoped<ICategoryService, CategoryService>();
+    builder.Services.AddScoped<IDishService, DishService>();
 
-    // ===== CORS =====
+    // Настройка AutoMapper для маппинга DTO
+    builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+    // Настройка CORS для фронтенда
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:4200")
+            policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5175", "http://localhost:4200")
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
         });
-    });
+        });
 
-    // ===== Контроллеры и Swagger =====
-    builder.Services.AddControllers();
+    // Настройка контроллеров и Swagger
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            options.JsonSerializerOptions.WriteIndented = true;
+        });
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
@@ -178,39 +192,15 @@ try
 
     builder.Services.AddAuthorization(options =>
     {
-        options.AddPolicy("User", policy => policy.RequireRole("User", "Waiter", "Admin"));
-        options.AddPolicy("Waiter", policy => policy.RequireRole("Waiter", "Admin"));
-        options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+        options.AddPolicy("User", policy => policy.RequireRole(Roles.User, Roles.Waiter, Roles.Admin));
+        options.AddPolicy("Waiter", policy => policy.RequireRole(Roles.Waiter, Roles.Admin));
+        options.AddPolicy("Admin", policy => policy.RequireRole(Roles.Admin));
     });
 
     var app = builder.Build();
 
-    // ===== Глобальная обработка ошибок =====
-    app.UseExceptionHandler(errorApp =>
-    {
-        errorApp.Run(async context =>
-        {
-            context.Response.StatusCode = 500;
-            context.Response.ContentType = "application/json";
-
-            var exceptionHandlerPathFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
-            var exception = exceptionHandlerPathFeature?.Error;
-
-            var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogError(exception, "Необработанное исключение: {Message}", exception?.Message);
-
-            var response = new
-            {
-                message = "Произошла внутренняя ошибка сервера",
-                error = app.Environment.IsDevelopment() ? exception?.Message : null,
-                stackTrace = app.Environment.IsDevelopment() ? exception?.StackTrace : null
-            };
-
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
-        });
-    });
-
-    // ===== Middleware =====
+    // Централизованная обработка исключений (должен быть первым в цепочке middleware)
+    app.UseMiddleware<ExceptionHandlingMiddleware>();
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
@@ -222,8 +212,6 @@ try
     }
 
     app.UseHttpsRedirection();
-
-    // ===== CORS =====
     app.UseCors("AllowFrontend");
 
     app.UseAuthentication();

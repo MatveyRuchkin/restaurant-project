@@ -1,15 +1,18 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
+using RestaurantAPI.Exceptions;
+using RestaurantAPI.Helpers;
 using RestaurantAPI.Models;
-using System.Security.Claims;
+using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class OrderItemsController : ControllerBase
+    public class OrderItemsController : BaseController
     {
         private readonly RestaurantDbContext _context;
         private readonly ILogger<OrderItemsController> _logger;
@@ -18,6 +21,69 @@ namespace RestaurantAPI.Controllers
         {
             _context = context;
             _logger = logger;
+        }
+
+        // GET: api/OrderItems/ByOrder/{orderId} - получение элементов заказа для текущего пользователя
+        [HttpGet("ByOrder/{orderId}")]
+        [Authorize]
+        public async Task<ActionResult> GetOrderItemsByOrder(Guid orderId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                {
+                    throw new UnauthorizedException("Не удалось определить пользователя");
+                }
+
+                // Проверяем, что заказ принадлежит текущему пользователю
+                var order = await _context.Orders
+                    .FirstOrDefaultAsync(o => o.Id == orderId && !o.IsDeleted);
+
+                if (order == null)
+                {
+                    throw new NotFoundException("Заказ не найден");
+                }
+
+                var userRole = GetCurrentUserRole();
+                if (!IsAdmin() && !IsWaiter() && order.UserId != userId.Value)
+                {
+                    throw new ForbiddenException("Нет доступа к этому заказу");
+                }
+
+                var items = await _context.OrderItems
+                    .Include(oi => oi.Dish)
+                    .Where(oi => !oi.IsDeleted && oi.OrderId == orderId)
+                    .Select(oi => new OrderItemReadDto
+                    {
+                        Id = oi.Id,
+                        DishId = oi.DishId,
+                        DishName = oi.Dish.Name,
+                        Quantity = oi.Quantity,
+                        Price = oi.Price,
+                        Notes = oi.Notes
+                    })
+                    .ToListAsync();
+
+                return Ok(items);
+            }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (ForbiddenException)
+            {
+                throw;
+            }
+            catch (UnauthorizedException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при получении элементов заказа {OrderId}", orderId);
+                throw;
+            }
         }
 
         // GET: api/OrderItems - официанты и админы
@@ -78,7 +144,8 @@ namespace RestaurantAPI.Controllers
                         DishId = oi.DishId,
                         DishName = oi.Dish.Name,
                         Quantity = oi.Quantity,
-                        Price = oi.Price
+                        Price = oi.Price,
+                        Notes = oi.Notes
                     })
                     .ToListAsync();
 
@@ -86,19 +153,18 @@ namespace RestaurantAPI.Controllers
                     "Получен список элементов заказов. Количество: {Count}, Всего: {Total}, Страница: {Page}",
                     items.Count, totalCount, page);
 
-                return Ok(new
+                return Ok(new PagedResult<OrderItemReadDto>
                 {
-                    data = items,
-                    totalCount = totalCount,
-                    page = page,
-                    pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    Data = items,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении списка элементов заказов");
-                return StatusCode(500, "Произошла ошибка при получении списка элементов заказов.");
+                throw;
             }
         }
 
@@ -116,7 +182,7 @@ namespace RestaurantAPI.Controllers
                 if (item == null)
                 {
                     _logger.LogWarning("Элемент заказа с Id {OrderItemId} не найден", id);
-                    return NotFound();
+                    throw new NotFoundException("Элемент заказа не найден");
                 }
 
                 var dto = new OrderItemReadDto
@@ -125,15 +191,20 @@ namespace RestaurantAPI.Controllers
                     DishId = item.DishId,
                     DishName = item.Dish.Name,
                     Quantity = item.Quantity,
-                    Price = item.Price
+                    Price = item.Price,
+                    Notes = item.Notes
                 };
 
                 return Ok(dto);
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при получении элемента заказа {OrderItemId}", id);
-                return StatusCode(500, "Произошла ошибка при получении элемента заказа.");
+                throw;
             }
         }
 
@@ -144,19 +215,19 @@ namespace RestaurantAPI.Controllers
         {
             try
             {
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 var dish = await _context.Dishes.FirstOrDefaultAsync(d => d.Id == createDto.DishId && !d.IsDeleted);
                 if (dish == null)
                 {
                     _logger.LogWarning("Попытка создания элемента заказа с несуществующим блюдом: {DishId}", createDto.DishId);
-                    return BadRequest("Блюдо не найдено.");
+                    throw new NotFoundException("Блюдо не найдено");
                 }
 
                 if (createDto.Quantity <= 0)
                 {
                     _logger.LogWarning("Попытка создания элемента заказа с неверным количеством: {Quantity}", createDto.Quantity);
-                    return BadRequest("Количество должно быть больше 0.");
+                    throw new BadRequestException("Количество должно быть больше 0");
                 }
 
                 var orderItem = new OrderItem
@@ -164,6 +235,7 @@ namespace RestaurantAPI.Controllers
                     DishId = createDto.DishId,
                     Quantity = createDto.Quantity,
                     Price = dish.Price * createDto.Quantity,
+                    Notes = createDto.Notes,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = username
                 };
@@ -180,15 +252,24 @@ namespace RestaurantAPI.Controllers
                     DishId = orderItem.DishId,
                     DishName = dish.Name,
                     Quantity = orderItem.Quantity,
-                    Price = orderItem.Price
+                    Price = orderItem.Price,
+                    Notes = orderItem.Notes
                 };
 
                 return CreatedAtAction(nameof(GetOrderItem), new { id = orderItem.Id }, readDto);
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при создании элемента заказа");
-                return StatusCode(500, "Произошла ошибка при создании элемента заказа.");
+                throw;
             }
         }
 
@@ -206,16 +287,16 @@ namespace RestaurantAPI.Controllers
                 if (orderItem == null)
                 {
                     _logger.LogWarning("Попытка обновления несуществующего элемента заказа: {OrderItemId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Элемент заказа не найден");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 if (updateDto.Quantity <= 0)
                 {
                     _logger.LogWarning("Попытка обновления элемента заказа {OrderItemId} с неверным количеством: {Quantity}",
                         id, updateDto.Quantity);
-                    return BadRequest("Количество должно быть больше 0.");
+                    throw new BadRequestException("Количество должно быть больше 0");
                 }
 
                 orderItem.Quantity = updateDto.Quantity;
@@ -229,10 +310,18 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
+            catch (BadRequestException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при обновлении элемента заказа {OrderItemId}", id);
-                return StatusCode(500, "Произошла ошибка при обновлении элемента заказа.");
+                throw;
             }
         }
 
@@ -249,10 +338,10 @@ namespace RestaurantAPI.Controllers
                 if (orderItem == null)
                 {
                     _logger.LogWarning("Попытка удаления несуществующего элемента заказа: {OrderItemId}", id);
-                    return NotFound();
+                    throw new NotFoundException("Элемент заказа не найден");
                 }
 
-                var username = User?.Identity?.Name ?? "System";
+                var username = GetCurrentUsername();
 
                 orderItem.IsDeleted = true;
                 orderItem.DeletedAt = DateTime.UtcNow;
@@ -265,10 +354,14 @@ namespace RestaurantAPI.Controllers
 
                 return NoContent();
             }
+            catch (NotFoundException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при удалении элемента заказа {OrderItemId}", id);
-                return StatusCode(500, "Произошла ошибка при удалении элемента заказа.");
+                throw;
             }
         }
     }
