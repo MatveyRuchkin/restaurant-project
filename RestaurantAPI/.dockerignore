@@ -1,0 +1,11 @@
+**/.dockerignore
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/*.*proj.user
+**/bin
+**/obj
+**/Logs
+*.log
+**/node_modules

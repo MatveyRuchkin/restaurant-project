@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { handleApiError } from '@/utils/errorHandler'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7188/api'
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
 if (import.meta.env.DEV) {
   console.log('API Base URL:', baseURL)

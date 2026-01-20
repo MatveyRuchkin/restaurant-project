@@ -1,0 +1,18 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: restaurant-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=192.168.1.70,60341;Database=RestaurantDb;User Id=sa;Password=150805rrMM!;TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - Jwt__Key=K1a5i0s8e0r5k2a0y0a5oMlOeTsYyAaGODBLESSAMERICA
+      - Jwt__Issuer=RestaurantAPI
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./RestaurantAPI/Logs:/app/Logs

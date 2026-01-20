@@ -2,8 +2,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using RestaurantAPI.Models;
-using RestaurantAPI.Services;
+using RestaurantAPI.Infrastructure.Persistence;
+using RestaurantAPI.Application.Interfaces;
+using RestaurantAPI.Application.Services;
 using RestaurantAPI.Middleware;
 using RestaurantAPI.Mappings;
 using RestaurantAPI.Constants;
@@ -48,12 +49,27 @@ try
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5175", "http://localhost:4200")
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
+            policy.WithOrigins(
+                    "http://localhost:3000", 
+                    "http://localhost:5173", 
+                    "http://localhost:5175", 
+                    "http://localhost:4200",
+                    "http://127.0.0.1:3000",
+                    "http://127.0.0.1:5173",
+                    "http://127.0.0.1:5175",
+                    "http://127.0.0.1:4200"
+                )
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials()
+                .SetIsOriginAllowed(origin => 
+                {
+                    // Разрешаем localhost и 127.0.0.1 с любым портом для разработки
+                    return origin.StartsWith("http://localhost:") || 
+                           origin.StartsWith("http://127.0.0.1:");
+                });
         });
-        });
+    });
 
     // Настройка контроллеров и Swagger
     builder.Services.AddControllers()

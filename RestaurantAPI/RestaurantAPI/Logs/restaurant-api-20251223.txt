@@ -22132,3 +22132,549 @@ ORDER BY [s].[Name]
 [2025-12-23 11:23:05.450] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi) in 11.4154ms
 [2025-12-23 11:23:05.453] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi)'
 [2025-12-23 11:23:05.454] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - 200 null application/json; charset=utf-8 24.9746ms
+[2025-12-23 19:56:42.133] [INF] [] Запуск приложения Restaurant API
+[2025-12-23 19:56:44.611] [INF] [] Приложение Restaurant API успешно запущено
+[2025-12-23 19:56:44.659] [INF] [Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager] User profile is available. Using 'C:\Users\motya\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+[2025-12-23 19:56:45.005] [INF] [Microsoft.Hosting.Lifetime] Now listening on: https://localhost:7188
+[2025-12-23 19:56:45.007] [INF] [Microsoft.Hosting.Lifetime] Now listening on: http://localhost:5143
+[2025-12-23 19:56:45.133] [INF] [Microsoft.Hosting.Lifetime] Application started. Press Ctrl+C to shut down.
+[2025-12-23 19:56:45.136] [INF] [Microsoft.Hosting.Lifetime] Hosting environment: Development
+[2025-12-23 19:56:45.138] [INF] [Microsoft.Hosting.Lifetime] Content root path: D:\restaurant-project\RestaurantAPI\RestaurantApi
+[2025-12-23 19:56:46.288] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/swagger/index.html - null null
+[2025-12-23 19:56:46.642] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/swagger/index.html - 200 null text/html;charset=utf-8 355.1263ms
+[2025-12-23 19:56:46.699] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/_framework/aspnetcore-browser-refresh.js - null null
+[2025-12-23 19:56:46.699] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/_vs/browserLink - null null
+[2025-12-23 19:56:46.720] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/_framework/aspnetcore-browser-refresh.js - 200 16511 application/javascript; charset=utf-8 21.3118ms
+[2025-12-23 19:56:46.819] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/_vs/browserLink - 200 null text/javascript; charset=UTF-8 119.2844ms
+[2025-12-23 19:56:47.695] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/swagger/v1/swagger.json - null null
+[2025-12-23 19:56:47.751] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 55.6132ms
+[2025-12-23 19:57:00.280] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Auth/login - null null
+[2025-12-23 19:57:00.301] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:00.308] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Auth/login - 204 null null 27.4515ms
+[2025-12-23 19:57:00.312] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 POST https://localhost:7188/api/Auth/login - application/json 44
+[2025-12-23 19:57:00.331] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:03.103] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.AuthController.Login (RestaurantApi)'
+[2025-12-23 19:57:03.165] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.AuthResponseDto]] Login(RestaurantAPI.DTOs.UserLoginDto) on controller RestaurantAPI.Controllers.AuthController (RestaurantApi).
+[2025-12-23 19:57:09.001] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (198ms) [Parameters=[@__dto_Username_0='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[CreatedBy], [u].[DeletedAt], [u].[DeletedBy], [u].[IsDeleted], [u].[Notes], [u].[PasswordHash], [u].[RoleId], [u].[UpdatedAt], [u].[UpdatedBy], [u].[Username], [r].[Id], [r].[CreatedAt], [r].[CreatedBy], [r].[DeletedAt], [r].[DeletedBy], [r].[IsDeleted], [r].[Name], [r].[Notes], [r].[UpdatedAt], [r].[UpdatedBy]
+FROM [Users] AS [u]
+INNER JOIN [Roles] AS [r] ON [u].[RoleId] = [r].[Id]
+WHERE [u].[Username] = @__dto_Username_0 AND [u].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:10.433] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (25ms) [Parameters=[@p0='?' (DbType = DateTime), @p1='?' (DbType = DateTime), @p2='?' (DbType = Boolean), @p3='?' (DbType = DateTime), @p4='?' (Size = 4000), @p5='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [JwtTokens] ([CreatedAt], [ExpiresAt], [Revoked], [RevokedAt], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+[2025-12-23 19:57:10.486] [INF] [RestaurantAPI.Controllers.AuthController] Пользователь admin успешно вошел в систему
+[2025-12-23 19:57:10.501] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing ObjectResult, writing value of type 'RestaurantAPI.DTOs.AuthResponseDto'.
+[2025-12-23 19:57:10.526] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.AuthController.Login (RestaurantApi) in 7351.6314ms
+[2025-12-23 19:57:10.530] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.AuthController.Login (RestaurantApi)'
+[2025-12-23 19:57:10.548] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 POST https://localhost:7188/api/Auth/login - 499 null application/json; charset=utf-8 10235.3647ms
+[2025-12-23 19:57:11.617] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Auth/login - null null
+[2025-12-23 19:57:11.623] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:11.625] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Auth/login - 204 null null 8.1731ms
+[2025-12-23 19:57:11.628] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 POST https://localhost:7188/api/Auth/login - application/json 44
+[2025-12-23 19:57:11.632] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:11.635] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.AuthController.Login (RestaurantApi)'
+[2025-12-23 19:57:11.637] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.AuthResponseDto]] Login(RestaurantAPI.DTOs.UserLoginDto) on controller RestaurantAPI.Controllers.AuthController (RestaurantApi).
+[2025-12-23 19:57:11.679] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (2ms) [Parameters=[@__dto_Username_0='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[CreatedBy], [u].[DeletedAt], [u].[DeletedBy], [u].[IsDeleted], [u].[Notes], [u].[PasswordHash], [u].[RoleId], [u].[UpdatedAt], [u].[UpdatedBy], [u].[Username], [r].[Id], [r].[CreatedAt], [r].[CreatedBy], [r].[DeletedAt], [r].[DeletedBy], [r].[IsDeleted], [r].[Name], [r].[Notes], [r].[UpdatedAt], [r].[UpdatedBy]
+FROM [Users] AS [u]
+INNER JOIN [Roles] AS [r] ON [u].[RoleId] = [r].[Id]
+WHERE [u].[Username] = @__dto_Username_0 AND [u].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:12.059] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = DateTime), @p1='?' (DbType = DateTime), @p2='?' (DbType = Boolean), @p3='?' (DbType = DateTime), @p4='?' (Size = 4000), @p5='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [JwtTokens] ([CreatedAt], [ExpiresAt], [Revoked], [RevokedAt], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+[2025-12-23 19:57:12.067] [INF] [RestaurantAPI.Controllers.AuthController] Пользователь admin успешно вошел в систему
+[2025-12-23 19:57:12.071] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing ObjectResult, writing value of type 'RestaurantAPI.DTOs.AuthResponseDto'.
+[2025-12-23 19:57:12.076] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.AuthController.Login (RestaurantApi) in 436.2753ms
+[2025-12-23 19:57:12.079] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.AuthController.Login (RestaurantApi)'
+[2025-12-23 19:57:12.082] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 POST https://localhost:7188/api/Auth/login - 200 null application/json; charset=utf-8 454.1792ms
+[2025-12-23 19:57:12.094] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Cart - null null
+[2025-12-23 19:57:12.099] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:12.102] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Cart - 204 null null 7.9975ms
+[2025-12-23 19:57:12.105] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Cart - null null
+[2025-12-23 19:57:12.113] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:12.200] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi)'
+[2025-12-23 19:57:12.224] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetCart", controller = "Cart"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.CartReadDto]] GetCart() on controller RestaurantAPI.Controllers.CartController (RestaurantApi).
+[2025-12-23 19:57:12.667] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (24ms) [Parameters=[@__userId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c1].[Id], [c1].[CreatedAt], [c1].[UpdatedAt], [c1].[UserId], [s].[Id], [s].[CartId], [s].[CreatedAt], [s].[DishId], [s].[Notes], [s].[Quantity], [s].[UpdatedAt], [s].[Id0], [s].[CategoryId], [s].[CreatedAt0], [s].[CreatedBy], [s].[DeletedAt], [s].[DeletedBy], [s].[Description], [s].[IsDeleted], [s].[Name], [s].[Notes0], [s].[Price], [s].[UpdatedAt0], [s].[UpdatedBy]
+FROM (
+    SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[UpdatedAt], [c].[UserId]
+    FROM [Carts] AS [c]
+    WHERE [c].[UserId] = @__userId_Value_0
+) AS [c1]
+LEFT JOIN (
+    SELECT [c0].[Id], [c0].[CartId], [c0].[CreatedAt], [c0].[DishId], [c0].[Notes], [c0].[Quantity], [c0].[UpdatedAt], [d].[Id] AS [Id0], [d].[CategoryId], [d].[CreatedAt] AS [CreatedAt0], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes] AS [Notes0], [d].[Price], [d].[UpdatedAt] AS [UpdatedAt0], [d].[UpdatedBy]
+    FROM [CartItems] AS [c0]
+    INNER JOIN [Dishes] AS [d] ON [c0].[DishId] = [d].[Id]
+) AS [s] ON [c1].[Id] = [s].[CartId]
+ORDER BY [c1].[Id], [s].[Id]
+[2025-12-23 19:57:12.714] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.DTOs.CartReadDto'.
+[2025-12-23 19:57:12.736] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi) in 508.4662ms
+[2025-12-23 19:57:12.738] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi)'
+[2025-12-23 19:57:12.739] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Cart - 200 null application/json; charset=utf-8 634.6723ms
+[2025-12-23 19:57:17.736] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Menus?pageSize=100 - null null
+[2025-12-23 19:57:17.784] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Categories?pageSize=100 - null null
+[2025-12-23 19:57:17.786] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Dishes?pageSize=1000 - null null
+[2025-12-23 19:57:17.823] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:17.825] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:17.833] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:17.835] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Menus?pageSize=100 - 204 null null 98.3553ms
+[2025-12-23 19:57:17.836] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Categories?pageSize=100 - 204 null null 52.3959ms
+[2025-12-23 19:57:17.837] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Dishes?pageSize=1000 - 204 null null 51.552ms
+[2025-12-23 19:57:17.841] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Menus?pageSize=100 - null null
+[2025-12-23 19:57:17.841] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Categories?pageSize=100 - null null
+[2025-12-23 19:57:17.841] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Dishes?pageSize=1000 - null null
+[2025-12-23 19:57:17.863] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:17.869] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:17.875] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:17.882] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi)'
+[2025-12-23 19:57:17.886] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi)'
+[2025-12-23 19:57:17.887] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi)'
+[2025-12-23 19:57:17.901] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetMenus", controller = "Menus"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.MenuReadDto]]] GetMenus(System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.MenusController (RestaurantApi).
+[2025-12-23 19:57:17.903] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetCategories", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.CategoryReadDto]]] GetCategories(System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.CategoriesController (RestaurantApi).
+[2025-12-23 19:57:17.908] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetDishes", controller = "Dishes"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.DishReadDto]]] GetDishes(System.Nullable`1[System.Guid], System.Nullable`1[System.Decimal], System.Nullable`1[System.Decimal], System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.DishesController (RestaurantApi).
+[2025-12-23 19:57:18.089] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Menus] AS [m]
+WHERE [m].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:18.089] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (13ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Dishes] AS [d]
+WHERE [d].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:18.089] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (30ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Categories] AS [c]
+WHERE [c].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:18.130] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (8ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c].[Id], [c].[CreatedAt], [c].[CreatedBy], [c].[DeletedAt], [c].[DeletedBy], [c].[IsDeleted], [c].[Name], [c].[Notes], [c].[UpdatedAt], [c].[UpdatedBy]
+FROM [Categories] AS [c]
+WHERE [c].[IsDeleted] = CAST(0 AS bit)
+ORDER BY [c].[Name]
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[2025-12-23 19:57:18.130] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (8ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [m].[Id], [m].[CreatedAt], [m].[CreatedBy], [m].[DeletedAt], [m].[DeletedBy], [m].[IsDeleted], [m].[Name], [m].[Notes], [m].[UpdatedAt], [m].[UpdatedBy]
+FROM [Menus] AS [m]
+WHERE [m].[IsDeleted] = CAST(0 AS bit)
+ORDER BY [m].[Name]
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[2025-12-23 19:57:18.153] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (20ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d0].[Id], [d0].[CategoryId], [d0].[CreatedAt], [d0].[CreatedBy], [d0].[DeletedAt], [d0].[DeletedBy], [d0].[Description], [d0].[IsDeleted], [d0].[Name], [d0].[Notes], [d0].[Price], [d0].[UpdatedAt], [d0].[UpdatedBy], [c].[Id], [c].[CreatedAt], [c].[CreatedBy], [c].[DeletedAt], [c].[DeletedBy], [c].[IsDeleted], [c].[Name], [c].[Notes], [c].[UpdatedAt], [c].[UpdatedBy]
+FROM (
+    SELECT [d].[Id], [d].[CategoryId], [d].[CreatedAt], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes], [d].[Price], [d].[UpdatedAt], [d].[UpdatedBy]
+    FROM [Dishes] AS [d]
+    WHERE [d].[IsDeleted] = CAST(0 AS bit)
+    ORDER BY [d].[Name]
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [d0]
+INNER JOIN [Categories] AS [c] ON [d0].[CategoryId] = [c].[Id]
+ORDER BY [d0].[Name]
+[2025-12-23 19:57:18.191] [INF] [RestaurantAPI.Controllers.MenusController] Получен список меню. Количество: 2, Всего: 2, Страница: 1
+[2025-12-23 19:57:18.191] [INF] [RestaurantAPI.Controllers.CategoriesController] Получен список категорий. Количество: 6, Всего: 6, Страница: 1
+[2025-12-23 19:57:18.195] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.MenuReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:57:18.198] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.CategoryReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:57:18.211] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi) in 303.3851ms
+[2025-12-23 19:57:18.212] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi) in 301.6221ms
+[2025-12-23 19:57:18.215] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi)'
+[2025-12-23 19:57:18.218] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi)'
+[2025-12-23 19:57:18.221] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Menus?pageSize=100 - 200 null application/json; charset=utf-8 379.8561ms
+[2025-12-23 19:57:18.224] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Categories?pageSize=100 - 200 null application/json; charset=utf-8 382.8866ms
+[2025-12-23 19:57:18.228] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - null null
+[2025-12-23 19:57:18.241] [INF] [RestaurantAPI.Controllers.DishesController] Получен список блюд. Количество: 13, Всего: 13, Страница: 1, Размер страницы: 1000
+[2025-12-23 19:57:18.245] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:18.248] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.DishReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:57:18.250] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - 204 null null 21.9635ms
+[2025-12-23 19:57:18.253] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - null null
+[2025-12-23 19:57:18.258] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi) in 340.1162ms
+[2025-12-23 19:57:18.262] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:18.264] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi)'
+[2025-12-23 19:57:18.267] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi)'
+[2025-12-23 19:57:18.269] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Dishes?pageSize=1000 - 200 null application/json; charset=utf-8 427.6473ms
+[2025-12-23 19:57:18.282] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetMenuDishes", controller = "MenuDishes"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] GetMenuDishes(System.Nullable`1[System.Guid], System.Nullable`1[System.Guid], System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.MenuDishesController (RestaurantApi).
+[2025-12-23 19:57:18.337] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (25ms) [Parameters=[@__menuId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [MenuDishes] AS [m]
+INNER JOIN [Menus] AS [m0] ON [m].[MenuId] = [m0].[Id]
+WHERE [m].[IsDeleted] = CAST(0 AS bit) AND [m].[MenuId] = @__menuId_Value_0
+[2025-12-23 19:57:18.383] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (10ms) [Parameters=[@__menuId_Value_0='?' (DbType = Guid), @__p_1='?' (DbType = Int32), @__p_2='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [s].[Id], [s].[MenuId], [s].[Name] AS [MenuName], [s].[DishId], [d].[Name] AS [DishName]
+FROM (
+    SELECT [m].[Id], [m].[DishId], [m].[MenuId], [m0].[Name]
+    FROM [MenuDishes] AS [m]
+    INNER JOIN [Menus] AS [m0] ON [m].[MenuId] = [m0].[Id]
+    WHERE [m].[IsDeleted] = CAST(0 AS bit) AND [m].[MenuId] = @__menuId_Value_0
+    ORDER BY [m0].[Name]
+    OFFSET @__p_1 ROWS FETCH NEXT @__p_2 ROWS ONLY
+) AS [s]
+INNER JOIN [Dishes] AS [d] ON [s].[DishId] = [d].[Id]
+ORDER BY [s].[Name]
+[2025-12-23 19:57:18.389] [INF] [RestaurantAPI.Controllers.MenuDishesController] Получен список блюд в меню. Количество: 9, Всего: 9, Страница: 1
+[2025-12-23 19:57:18.392] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.MenuDishReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:57:18.398] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi) in 112.5591ms
+[2025-12-23 19:57:18.402] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi)'
+[2025-12-23 19:57:18.403] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - 200 null application/json; charset=utf-8 150.0835ms
+[2025-12-23 19:57:43.975] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Auth/login - null null
+[2025-12-23 19:57:43.981] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:43.983] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Auth/login - 204 null null 7.8571ms
+[2025-12-23 19:57:43.988] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 POST https://localhost:7188/api/Auth/login - application/json 44
+[2025-12-23 19:57:43.996] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:43.998] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.AuthController.Login (RestaurantApi)'
+[2025-12-23 19:57:44.001] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.AuthResponseDto]] Login(RestaurantAPI.DTOs.UserLoginDto) on controller RestaurantAPI.Controllers.AuthController (RestaurantApi).
+[2025-12-23 19:57:44.031] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (17ms) [Parameters=[@__dto_Username_0='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[CreatedBy], [u].[DeletedAt], [u].[DeletedBy], [u].[IsDeleted], [u].[Notes], [u].[PasswordHash], [u].[RoleId], [u].[UpdatedAt], [u].[UpdatedBy], [u].[Username], [r].[Id], [r].[CreatedAt], [r].[CreatedBy], [r].[DeletedAt], [r].[DeletedBy], [r].[IsDeleted], [r].[Name], [r].[Notes], [r].[UpdatedAt], [r].[UpdatedBy]
+FROM [Users] AS [u]
+INNER JOIN [Roles] AS [r] ON [u].[RoleId] = [r].[Id]
+WHERE [u].[Username] = @__dto_Username_0 AND [u].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:44.396] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (27ms) [Parameters=[@p0='?' (DbType = DateTime), @p1='?' (DbType = DateTime), @p2='?' (DbType = Boolean), @p3='?' (DbType = DateTime), @p4='?' (Size = 4000), @p5='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [JwtTokens] ([CreatedAt], [ExpiresAt], [Revoked], [RevokedAt], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+[2025-12-23 19:57:44.402] [INF] [RestaurantAPI.Controllers.AuthController] Пользователь admin успешно вошел в систему
+[2025-12-23 19:57:44.404] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing ObjectResult, writing value of type 'RestaurantAPI.DTOs.AuthResponseDto'.
+[2025-12-23 19:57:44.406] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.AuthController.Login (RestaurantApi) in 398.6652ms
+[2025-12-23 19:57:44.409] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.AuthController.Login (RestaurantApi)'
+[2025-12-23 19:57:44.411] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 POST https://localhost:7188/api/Auth/login - 200 null application/json; charset=utf-8 423.4539ms
+[2025-12-23 19:57:44.424] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Cart - null null
+[2025-12-23 19:57:44.430] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:44.432] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Cart - 204 null null 8.5714ms
+[2025-12-23 19:57:44.436] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Cart - null null
+[2025-12-23 19:57:44.445] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:44.456] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi)'
+[2025-12-23 19:57:44.459] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetCart", controller = "Cart"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.CartReadDto]] GetCart() on controller RestaurantAPI.Controllers.CartController (RestaurantApi).
+[2025-12-23 19:57:44.489] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (23ms) [Parameters=[@__userId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c1].[Id], [c1].[CreatedAt], [c1].[UpdatedAt], [c1].[UserId], [s].[Id], [s].[CartId], [s].[CreatedAt], [s].[DishId], [s].[Notes], [s].[Quantity], [s].[UpdatedAt], [s].[Id0], [s].[CategoryId], [s].[CreatedAt0], [s].[CreatedBy], [s].[DeletedAt], [s].[DeletedBy], [s].[Description], [s].[IsDeleted], [s].[Name], [s].[Notes0], [s].[Price], [s].[UpdatedAt0], [s].[UpdatedBy]
+FROM (
+    SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[UpdatedAt], [c].[UserId]
+    FROM [Carts] AS [c]
+    WHERE [c].[UserId] = @__userId_Value_0
+) AS [c1]
+LEFT JOIN (
+    SELECT [c0].[Id], [c0].[CartId], [c0].[CreatedAt], [c0].[DishId], [c0].[Notes], [c0].[Quantity], [c0].[UpdatedAt], [d].[Id] AS [Id0], [d].[CategoryId], [d].[CreatedAt] AS [CreatedAt0], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes] AS [Notes0], [d].[Price], [d].[UpdatedAt] AS [UpdatedAt0], [d].[UpdatedBy]
+    FROM [CartItems] AS [c0]
+    INNER JOIN [Dishes] AS [d] ON [c0].[DishId] = [d].[Id]
+) AS [s] ON [c1].[Id] = [s].[CartId]
+ORDER BY [c1].[Id], [s].[Id]
+[2025-12-23 19:57:44.497] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.DTOs.CartReadDto'.
+[2025-12-23 19:57:44.500] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi) in 37.3644ms
+[2025-12-23 19:57:44.503] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi)'
+[2025-12-23 19:57:44.506] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Cart - 200 null application/json; charset=utf-8 69.5037ms
+[2025-12-23 19:57:46.026] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Menus?pageSize=100 - null null
+[2025-12-23 19:57:46.026] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Categories?pageSize=100 - null null
+[2025-12-23 19:57:46.032] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:46.035] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Menus?pageSize=100 - 204 null null 9.4284ms
+[2025-12-23 19:57:46.034] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:46.038] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Dishes?pageSize=1000 - null null
+[2025-12-23 19:57:46.069] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Menus?pageSize=100 - null null
+[2025-12-23 19:57:46.079] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Categories?pageSize=100 - 204 null null 53.2949ms
+[2025-12-23 19:57:46.083] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Categories?pageSize=100 - null null
+[2025-12-23 19:57:46.084] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:46.092] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:46.103] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:46.105] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Dishes?pageSize=1000 - 204 null null 67.0214ms
+[2025-12-23 19:57:46.107] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi)'
+[2025-12-23 19:57:46.108] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Dishes?pageSize=1000 - null null
+[2025-12-23 19:57:46.109] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi)'
+[2025-12-23 19:57:46.118] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetMenus", controller = "Menus"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.MenuReadDto]]] GetMenus(System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.MenusController (RestaurantApi).
+[2025-12-23 19:57:46.123] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:46.125] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetCategories", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.CategoryReadDto]]] GetCategories(System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.CategoriesController (RestaurantApi).
+[2025-12-23 19:57:46.132] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi)'
+[2025-12-23 19:57:46.137] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetDishes", controller = "Dishes"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.DishReadDto]]] GetDishes(System.Nullable`1[System.Guid], System.Nullable`1[System.Decimal], System.Nullable`1[System.Decimal], System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.DishesController (RestaurantApi).
+[2025-12-23 19:57:46.137] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Menus] AS [m]
+WHERE [m].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:46.141] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Categories] AS [c]
+WHERE [c].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:46.147] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Dishes] AS [d]
+WHERE [d].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:57:46.150] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (5ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [m].[Id], [m].[CreatedAt], [m].[CreatedBy], [m].[DeletedAt], [m].[DeletedBy], [m].[IsDeleted], [m].[Name], [m].[Notes], [m].[UpdatedAt], [m].[UpdatedBy]
+FROM [Menus] AS [m]
+WHERE [m].[IsDeleted] = CAST(0 AS bit)
+ORDER BY [m].[Name]
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[2025-12-23 19:57:46.158] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (10ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c].[Id], [c].[CreatedAt], [c].[CreatedBy], [c].[DeletedAt], [c].[DeletedBy], [c].[IsDeleted], [c].[Name], [c].[Notes], [c].[UpdatedAt], [c].[UpdatedBy]
+FROM [Categories] AS [c]
+WHERE [c].[IsDeleted] = CAST(0 AS bit)
+ORDER BY [c].[Name]
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[2025-12-23 19:57:46.164] [INF] [RestaurantAPI.Controllers.MenusController] Получен список меню. Количество: 2, Всего: 2, Страница: 1
+[2025-12-23 19:57:46.165] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (9ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d0].[Id], [d0].[CategoryId], [d0].[CreatedAt], [d0].[CreatedBy], [d0].[DeletedAt], [d0].[DeletedBy], [d0].[Description], [d0].[IsDeleted], [d0].[Name], [d0].[Notes], [d0].[Price], [d0].[UpdatedAt], [d0].[UpdatedBy], [c].[Id], [c].[CreatedAt], [c].[CreatedBy], [c].[DeletedAt], [c].[DeletedBy], [c].[IsDeleted], [c].[Name], [c].[Notes], [c].[UpdatedAt], [c].[UpdatedBy]
+FROM (
+    SELECT [d].[Id], [d].[CategoryId], [d].[CreatedAt], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes], [d].[Price], [d].[UpdatedAt], [d].[UpdatedBy]
+    FROM [Dishes] AS [d]
+    WHERE [d].[IsDeleted] = CAST(0 AS bit)
+    ORDER BY [d].[Name]
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [d0]
+INNER JOIN [Categories] AS [c] ON [d0].[CategoryId] = [c].[Id]
+ORDER BY [d0].[Name]
+[2025-12-23 19:57:46.168] [INF] [RestaurantAPI.Controllers.CategoriesController] Получен список категорий. Количество: 6, Всего: 6, Страница: 1
+[2025-12-23 19:57:46.170] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.MenuReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:57:46.178] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.CategoryReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:57:46.178] [INF] [RestaurantAPI.Controllers.DishesController] Получен список блюд. Количество: 13, Всего: 13, Страница: 1, Размер страницы: 1000
+[2025-12-23 19:57:46.180] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi) in 49.7101ms
+[2025-12-23 19:57:46.182] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi) in 47.4979ms
+[2025-12-23 19:57:46.185] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.DishReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:57:46.195] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi)'
+[2025-12-23 19:57:46.198] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi)'
+[2025-12-23 19:57:46.201] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi) in 60.9626ms
+[2025-12-23 19:57:46.203] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Menus?pageSize=100 - 200 null application/json; charset=utf-8 134.0956ms
+[2025-12-23 19:57:46.204] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Categories?pageSize=100 - 200 null application/json; charset=utf-8 121.5845ms
+[2025-12-23 19:57:46.208] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi)'
+[2025-12-23 19:57:46.210] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - null null
+[2025-12-23 19:57:46.221] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Dishes?pageSize=1000 - 200 null application/json; charset=utf-8 112.8568ms
+[2025-12-23 19:57:46.225] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:46.231] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - 204 null null 21.6769ms
+[2025-12-23 19:57:46.235] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - null null
+[2025-12-23 19:57:46.243] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:57:46.246] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi)'
+[2025-12-23 19:57:46.248] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetMenuDishes", controller = "MenuDishes"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] GetMenuDishes(System.Nullable`1[System.Guid], System.Nullable`1[System.Guid], System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.MenuDishesController (RestaurantApi).
+[2025-12-23 19:57:46.257] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (1ms) [Parameters=[@__menuId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [MenuDishes] AS [m]
+INNER JOIN [Menus] AS [m0] ON [m].[MenuId] = [m0].[Id]
+WHERE [m].[IsDeleted] = CAST(0 AS bit) AND [m].[MenuId] = @__menuId_Value_0
+[2025-12-23 19:57:46.267] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (1ms) [Parameters=[@__menuId_Value_0='?' (DbType = Guid), @__p_1='?' (DbType = Int32), @__p_2='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [s].[Id], [s].[MenuId], [s].[Name] AS [MenuName], [s].[DishId], [d].[Name] AS [DishName]
+FROM (
+    SELECT [m].[Id], [m].[DishId], [m].[MenuId], [m0].[Name]
+    FROM [MenuDishes] AS [m]
+    INNER JOIN [Menus] AS [m0] ON [m].[MenuId] = [m0].[Id]
+    WHERE [m].[IsDeleted] = CAST(0 AS bit) AND [m].[MenuId] = @__menuId_Value_0
+    ORDER BY [m0].[Name]
+    OFFSET @__p_1 ROWS FETCH NEXT @__p_2 ROWS ONLY
+) AS [s]
+INNER JOIN [Dishes] AS [d] ON [s].[DishId] = [d].[Id]
+ORDER BY [s].[Name]
+[2025-12-23 19:57:46.271] [INF] [RestaurantAPI.Controllers.MenuDishesController] Получен список блюд в меню. Количество: 9, Всего: 9, Страница: 1
+[2025-12-23 19:57:46.273] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.MenuDishReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:57:46.276] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi) in 24.3965ms
+[2025-12-23 19:57:46.278] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi)'
+[2025-12-23 19:57:46.280] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - 200 null application/json; charset=utf-8 45.5014ms
+[2025-12-23 19:58:10.032] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Cart/items - null null
+[2025-12-23 19:58:10.035] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:10.036] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Cart/items - 204 null null 4.4007ms
+[2025-12-23 19:58:10.039] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 POST https://localhost:7188/api/Cart/items - application/json 75
+[2025-12-23 19:58:10.046] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:10.051] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.CartController.AddItem (RestaurantApi)'
+[2025-12-23 19:58:10.058] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "AddItem", controller = "Cart"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.CartReadDto]] AddItem(RestaurantAPI.DTOs.CartItemAddDto) on controller RestaurantAPI.Controllers.CartController (RestaurantApi).
+[2025-12-23 19:58:10.137] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (7ms) [Parameters=[@__userId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c1].[Id], [c1].[CreatedAt], [c1].[UpdatedAt], [c1].[UserId], [c0].[Id], [c0].[CartId], [c0].[CreatedAt], [c0].[DishId], [c0].[Notes], [c0].[Quantity], [c0].[UpdatedAt]
+FROM (
+    SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[UpdatedAt], [c].[UserId]
+    FROM [Carts] AS [c]
+    WHERE [c].[UserId] = @__userId_Value_0
+) AS [c1]
+LEFT JOIN [CartItems] AS [c0] ON [c1].[Id] = [c0].[CartId]
+ORDER BY [c1].[Id]
+[2025-12-23 19:58:10.168] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (5ms) [Parameters=[@__8__locals1_dto_DishId_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [d].[Id], [d].[CategoryId], [d].[CreatedAt], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes], [d].[Price], [d].[UpdatedAt], [d].[UpdatedBy]
+FROM [Dishes] AS [d]
+WHERE [d].[Id] = @__8__locals1_dto_DishId_0 AND [d].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:58:10.324] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (9ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (DbType = Guid), @p3='?' (Size = 500), @p4='?' (DbType = Int32), @p5='?' (DbType = DateTime), @p7='?' (DbType = Guid), @p6='?' (DbType = DateTime)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [CartItems] ([CartId], [CreatedAt], [DishId], [Notes], [Quantity], [UpdatedAt])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [Carts] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+[2025-12-23 19:58:10.458] [INF] [RestaurantAPI.Controllers.CartController] Товар "c14b7bc6-a42f-4aa6-821e-694beb05a2eb" добавлен в корзину пользователя "601d547d-42ee-4d95-abc0-42bf30f4d94b"
+[2025-12-23 19:58:10.491] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (27ms) [Parameters=[@__userId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c1].[Id], [c1].[CreatedAt], [c1].[UpdatedAt], [c1].[UserId], [s].[Id], [s].[CartId], [s].[CreatedAt], [s].[DishId], [s].[Notes], [s].[Quantity], [s].[UpdatedAt], [s].[Id0], [s].[CategoryId], [s].[CreatedAt0], [s].[CreatedBy], [s].[DeletedAt], [s].[DeletedBy], [s].[Description], [s].[IsDeleted], [s].[Name], [s].[Notes0], [s].[Price], [s].[UpdatedAt0], [s].[UpdatedBy]
+FROM (
+    SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[UpdatedAt], [c].[UserId]
+    FROM [Carts] AS [c]
+    WHERE [c].[UserId] = @__userId_Value_0
+) AS [c1]
+LEFT JOIN (
+    SELECT [c0].[Id], [c0].[CartId], [c0].[CreatedAt], [c0].[DishId], [c0].[Notes], [c0].[Quantity], [c0].[UpdatedAt], [d].[Id] AS [Id0], [d].[CategoryId], [d].[CreatedAt] AS [CreatedAt0], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes] AS [Notes0], [d].[Price], [d].[UpdatedAt] AS [UpdatedAt0], [d].[UpdatedBy]
+    FROM [CartItems] AS [c0]
+    INNER JOIN [Dishes] AS [d] ON [c0].[DishId] = [d].[Id]
+) AS [s] ON [c1].[Id] = [s].[CartId]
+ORDER BY [c1].[Id], [s].[Id]
+[2025-12-23 19:58:10.505] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.DTOs.CartReadDto'.
+[2025-12-23 19:58:10.511] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.CartController.AddItem (RestaurantApi) in 450.6294ms
+[2025-12-23 19:58:10.514] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.CartController.AddItem (RestaurantApi)'
+[2025-12-23 19:58:10.516] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 POST https://localhost:7188/api/Cart/items - 200 null application/json; charset=utf-8 476.9355ms
+[2025-12-23 19:58:12.026] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 POST https://localhost:7188/api/Cart/items - application/json 75
+[2025-12-23 19:58:12.032] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:12.034] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.CartController.AddItem (RestaurantApi)'
+[2025-12-23 19:58:12.035] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "AddItem", controller = "Cart"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.CartReadDto]] AddItem(RestaurantAPI.DTOs.CartItemAddDto) on controller RestaurantAPI.Controllers.CartController (RestaurantApi).
+[2025-12-23 19:58:12.047] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (6ms) [Parameters=[@__userId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c1].[Id], [c1].[CreatedAt], [c1].[UpdatedAt], [c1].[UserId], [c0].[Id], [c0].[CartId], [c0].[CreatedAt], [c0].[DishId], [c0].[Notes], [c0].[Quantity], [c0].[UpdatedAt]
+FROM (
+    SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[UpdatedAt], [c].[UserId]
+    FROM [Carts] AS [c]
+    WHERE [c].[UserId] = @__userId_Value_0
+) AS [c1]
+LEFT JOIN [CartItems] AS [c0] ON [c1].[Id] = [c0].[CartId]
+ORDER BY [c1].[Id]
+[2025-12-23 19:58:12.055] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (1ms) [Parameters=[@__8__locals1_dto_DishId_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [d].[Id], [d].[CategoryId], [d].[CreatedAt], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes], [d].[Price], [d].[UpdatedAt], [d].[UpdatedBy]
+FROM [Dishes] AS [d]
+WHERE [d].[Id] = @__8__locals1_dto_DishId_0 AND [d].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:58:12.064] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (DbType = Guid), @p3='?' (Size = 500), @p4='?' (DbType = Int32), @p5='?' (DbType = DateTime), @p7='?' (DbType = Guid), @p6='?' (DbType = DateTime)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [CartItems] ([CartId], [CreatedAt], [DishId], [Notes], [Quantity], [UpdatedAt])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [Carts] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+[2025-12-23 19:58:12.071] [INF] [RestaurantAPI.Controllers.CartController] Товар "506c83ad-20ac-42f9-a32e-16f2701bad37" добавлен в корзину пользователя "601d547d-42ee-4d95-abc0-42bf30f4d94b"
+[2025-12-23 19:58:12.075] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (1ms) [Parameters=[@__userId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c1].[Id], [c1].[CreatedAt], [c1].[UpdatedAt], [c1].[UserId], [s].[Id], [s].[CartId], [s].[CreatedAt], [s].[DishId], [s].[Notes], [s].[Quantity], [s].[UpdatedAt], [s].[Id0], [s].[CategoryId], [s].[CreatedAt0], [s].[CreatedBy], [s].[DeletedAt], [s].[DeletedBy], [s].[Description], [s].[IsDeleted], [s].[Name], [s].[Notes0], [s].[Price], [s].[UpdatedAt0], [s].[UpdatedBy]
+FROM (
+    SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[UpdatedAt], [c].[UserId]
+    FROM [Carts] AS [c]
+    WHERE [c].[UserId] = @__userId_Value_0
+) AS [c1]
+LEFT JOIN (
+    SELECT [c0].[Id], [c0].[CartId], [c0].[CreatedAt], [c0].[DishId], [c0].[Notes], [c0].[Quantity], [c0].[UpdatedAt], [d].[Id] AS [Id0], [d].[CategoryId], [d].[CreatedAt] AS [CreatedAt0], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes] AS [Notes0], [d].[Price], [d].[UpdatedAt] AS [UpdatedAt0], [d].[UpdatedBy]
+    FROM [CartItems] AS [c0]
+    INNER JOIN [Dishes] AS [d] ON [c0].[DishId] = [d].[Id]
+) AS [s] ON [c1].[Id] = [s].[CartId]
+ORDER BY [c1].[Id], [s].[Id]
+[2025-12-23 19:58:12.081] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.DTOs.CartReadDto'.
+[2025-12-23 19:58:12.086] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.CartController.AddItem (RestaurantApi) in 47.9689ms
+[2025-12-23 19:58:12.091] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.CartController.AddItem (RestaurantApi)'
+[2025-12-23 19:58:12.094] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 POST https://localhost:7188/api/Cart/items - 200 null application/json; charset=utf-8 67.8019ms
+[2025-12-23 19:58:21.727] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Cart - null null
+[2025-12-23 19:58:21.736] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:21.738] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Cart - 204 null null 12.4933ms
+[2025-12-23 19:58:21.752] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Cart - null null
+[2025-12-23 19:58:21.755] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:21.757] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi)'
+[2025-12-23 19:58:21.758] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetCart", controller = "Cart"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.DTOs.CartReadDto]] GetCart() on controller RestaurantAPI.Controllers.CartController (RestaurantApi).
+[2025-12-23 19:58:21.814] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (47ms) [Parameters=[@__userId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c1].[Id], [c1].[CreatedAt], [c1].[UpdatedAt], [c1].[UserId], [s].[Id], [s].[CartId], [s].[CreatedAt], [s].[DishId], [s].[Notes], [s].[Quantity], [s].[UpdatedAt], [s].[Id0], [s].[CategoryId], [s].[CreatedAt0], [s].[CreatedBy], [s].[DeletedAt], [s].[DeletedBy], [s].[Description], [s].[IsDeleted], [s].[Name], [s].[Notes0], [s].[Price], [s].[UpdatedAt0], [s].[UpdatedBy]
+FROM (
+    SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[UpdatedAt], [c].[UserId]
+    FROM [Carts] AS [c]
+    WHERE [c].[UserId] = @__userId_Value_0
+) AS [c1]
+LEFT JOIN (
+    SELECT [c0].[Id], [c0].[CartId], [c0].[CreatedAt], [c0].[DishId], [c0].[Notes], [c0].[Quantity], [c0].[UpdatedAt], [d].[Id] AS [Id0], [d].[CategoryId], [d].[CreatedAt] AS [CreatedAt0], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes] AS [Notes0], [d].[Price], [d].[UpdatedAt] AS [UpdatedAt0], [d].[UpdatedBy]
+    FROM [CartItems] AS [c0]
+    INNER JOIN [Dishes] AS [d] ON [c0].[DishId] = [d].[Id]
+) AS [s] ON [c1].[Id] = [s].[CartId]
+ORDER BY [c1].[Id], [s].[Id]
+[2025-12-23 19:58:21.822] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.DTOs.CartReadDto'.
+[2025-12-23 19:58:21.826] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi) in 60.8554ms
+[2025-12-23 19:58:21.828] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.CartController.GetCart (RestaurantApi)'
+[2025-12-23 19:58:21.831] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Cart - 200 null application/json; charset=utf-8 79.588ms
+[2025-12-23 19:58:24.564] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Menus?pageSize=100 - null null
+[2025-12-23 19:58:24.566] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Categories?pageSize=100 - null null
+[2025-12-23 19:58:24.568] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/Dishes?pageSize=1000 - null null
+[2025-12-23 19:58:24.569] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:24.572] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:24.587] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Categories?pageSize=100 - 204 null null 20.7365ms
+[2025-12-23 19:58:24.583] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Menus?pageSize=100 - 204 null null 18.5863ms
+[2025-12-23 19:58:24.579] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:24.591] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Menus?pageSize=100 - null null
+[2025-12-23 19:58:24.592] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Categories?pageSize=100 - null null
+[2025-12-23 19:58:24.610] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/Dishes?pageSize=1000 - 204 null null 42.8764ms
+[2025-12-23 19:58:24.615] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/Dishes?pageSize=1000 - null null
+[2025-12-23 19:58:24.619] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:24.628] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:24.639] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:24.647] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi)'
+[2025-12-23 19:58:24.649] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi)'
+[2025-12-23 19:58:24.652] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi)'
+[2025-12-23 19:58:24.655] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetMenus", controller = "Menus"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.MenuReadDto]]] GetMenus(System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.MenusController (RestaurantApi).
+[2025-12-23 19:58:24.657] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetCategories", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.CategoryReadDto]]] GetCategories(System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.CategoriesController (RestaurantApi).
+[2025-12-23 19:58:24.658] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetDishes", controller = "Dishes"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[RestaurantAPI.Helpers.PagedResult`1[RestaurantAPI.DTOs.DishReadDto]]] GetDishes(System.Nullable`1[System.Guid], System.Nullable`1[System.Decimal], System.Nullable`1[System.Decimal], System.String, System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.DishesController (RestaurantApi).
+[2025-12-23 19:58:24.683] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (17ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Menus] AS [m]
+WHERE [m].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:58:24.683] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (13ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Dishes] AS [d]
+WHERE [d].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:58:24.690] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (21ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Categories] AS [c]
+WHERE [c].[IsDeleted] = CAST(0 AS bit)
+[2025-12-23 19:58:24.701] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (10ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [m].[Id], [m].[CreatedAt], [m].[CreatedBy], [m].[DeletedAt], [m].[DeletedBy], [m].[IsDeleted], [m].[Name], [m].[Notes], [m].[UpdatedAt], [m].[UpdatedBy]
+FROM [Menus] AS [m]
+WHERE [m].[IsDeleted] = CAST(0 AS bit)
+ORDER BY [m].[Name]
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[2025-12-23 19:58:24.707] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (9ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d0].[Id], [d0].[CategoryId], [d0].[CreatedAt], [d0].[CreatedBy], [d0].[DeletedAt], [d0].[DeletedBy], [d0].[Description], [d0].[IsDeleted], [d0].[Name], [d0].[Notes], [d0].[Price], [d0].[UpdatedAt], [d0].[UpdatedBy], [c].[Id], [c].[CreatedAt], [c].[CreatedBy], [c].[DeletedAt], [c].[DeletedBy], [c].[IsDeleted], [c].[Name], [c].[Notes], [c].[UpdatedAt], [c].[UpdatedBy]
+FROM (
+    SELECT [d].[Id], [d].[CategoryId], [d].[CreatedAt], [d].[CreatedBy], [d].[DeletedAt], [d].[DeletedBy], [d].[Description], [d].[IsDeleted], [d].[Name], [d].[Notes], [d].[Price], [d].[UpdatedAt], [d].[UpdatedBy]
+    FROM [Dishes] AS [d]
+    WHERE [d].[IsDeleted] = CAST(0 AS bit)
+    ORDER BY [d].[Name]
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [d0]
+INNER JOIN [Categories] AS [c] ON [d0].[CategoryId] = [c].[Id]
+ORDER BY [d0].[Name]
+[2025-12-23 19:58:24.709] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (7ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c].[Id], [c].[CreatedAt], [c].[CreatedBy], [c].[DeletedAt], [c].[DeletedBy], [c].[IsDeleted], [c].[Name], [c].[Notes], [c].[UpdatedAt], [c].[UpdatedBy]
+FROM [Categories] AS [c]
+WHERE [c].[IsDeleted] = CAST(0 AS bit)
+ORDER BY [c].[Name]
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[2025-12-23 19:58:24.710] [INF] [RestaurantAPI.Controllers.MenusController] Получен список меню. Количество: 2, Всего: 2, Страница: 1
+[2025-12-23 19:58:24.715] [INF] [RestaurantAPI.Controllers.DishesController] Получен список блюд. Количество: 13, Всего: 13, Страница: 1, Размер страницы: 1000
+[2025-12-23 19:58:24.719] [INF] [RestaurantAPI.Controllers.CategoriesController] Получен список категорий. Количество: 6, Всего: 6, Страница: 1
+[2025-12-23 19:58:24.721] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.MenuReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:58:24.725] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.DishReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:58:24.727] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.CategoryReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:58:24.729] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi) in 66.4646ms
+[2025-12-23 19:58:24.732] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi) in 63.7855ms
+[2025-12-23 19:58:24.734] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi) in 66.8072ms
+[2025-12-23 19:58:24.736] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.MenusController.GetMenus (RestaurantApi)'
+[2025-12-23 19:58:24.739] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.DishesController.GetDishes (RestaurantApi)'
+[2025-12-23 19:58:24.764] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.CategoriesController.GetCategories (RestaurantApi)'
+[2025-12-23 19:58:24.765] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Menus?pageSize=100 - 200 null application/json; charset=utf-8 174.6542ms
+[2025-12-23 19:58:24.772] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 OPTIONS https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - null null
+[2025-12-23 19:58:24.772] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Dishes?pageSize=1000 - 200 null application/json; charset=utf-8 157.7899ms
+[2025-12-23 19:58:24.773] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/Categories?pageSize=100 - 200 null application/json; charset=utf-8 181.2265ms
+[2025-12-23 19:58:24.785] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:24.798] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 OPTIONS https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - 204 null null 25.8459ms
+[2025-12-23 19:58:24.801] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request starting HTTP/2 GET https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - null null
+[2025-12-23 19:58:24.813] [INF] [Microsoft.AspNetCore.Cors.Infrastructure.CorsService] CORS policy execution successful.
+[2025-12-23 19:58:24.815] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executing endpoint 'RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi)'
+[2025-12-23 19:58:24.817] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Route matched with {action = "GetMenuDishes", controller = "MenuDishes"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] GetMenuDishes(System.Nullable`1[System.Guid], System.Nullable`1[System.Guid], System.String, System.String, Int32, Int32) on controller RestaurantAPI.Controllers.MenuDishesController (RestaurantApi).
+[2025-12-23 19:58:24.864] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (42ms) [Parameters=[@__menuId_Value_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [MenuDishes] AS [m]
+INNER JOIN [Menus] AS [m0] ON [m].[MenuId] = [m0].[Id]
+WHERE [m].[IsDeleted] = CAST(0 AS bit) AND [m].[MenuId] = @__menuId_Value_0
+[2025-12-23 19:58:24.903] [INF] [Microsoft.EntityFrameworkCore.Database.Command] Executed DbCommand (31ms) [Parameters=[@__menuId_Value_0='?' (DbType = Guid), @__p_1='?' (DbType = Int32), @__p_2='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [s].[Id], [s].[MenuId], [s].[Name] AS [MenuName], [s].[DishId], [d].[Name] AS [DishName]
+FROM (
+    SELECT [m].[Id], [m].[DishId], [m].[MenuId], [m0].[Name]
+    FROM [MenuDishes] AS [m]
+    INNER JOIN [Menus] AS [m0] ON [m].[MenuId] = [m0].[Id]
+    WHERE [m].[IsDeleted] = CAST(0 AS bit) AND [m].[MenuId] = @__menuId_Value_0
+    ORDER BY [m0].[Name]
+    OFFSET @__p_1 ROWS FETCH NEXT @__p_2 ROWS ONLY
+) AS [s]
+INNER JOIN [Dishes] AS [d] ON [s].[DishId] = [d].[Id]
+ORDER BY [s].[Name]
+[2025-12-23 19:58:24.909] [INF] [RestaurantAPI.Controllers.MenuDishesController] Получен список блюд в меню. Количество: 9, Всего: 9, Страница: 1
+[2025-12-23 19:58:24.912] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor] Executing OkObjectResult, writing value of type 'RestaurantAPI.Helpers.PagedResult`1[[RestaurantAPI.DTOs.MenuDishReadDto, RestaurantApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[2025-12-23 19:58:24.914] [INF] [Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker] Executed action RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi) in 94.4467ms
+[2025-12-23 19:58:24.917] [INF] [Microsoft.AspNetCore.Routing.EndpointMiddleware] Executed endpoint 'RestaurantAPI.Controllers.MenuDishesController.GetMenuDishes (RestaurantApi)'
+[2025-12-23 19:58:24.920] [INF] [Microsoft.AspNetCore.Hosting.Diagnostics] Request finished HTTP/2 GET https://localhost:7188/api/MenuDishes?menuId=b7126bb9-2192-4a2c-a076-283d39c30d68&pageSize=1000 - 200 null application/json; charset=utf-8 119.3643ms

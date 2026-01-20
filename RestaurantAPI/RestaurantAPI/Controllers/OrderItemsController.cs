@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
 using RestaurantAPI.Exceptions;
 using RestaurantAPI.Helpers;
-using RestaurantAPI.Models;
+using RestaurantAPI.Domain.Entities;
+using RestaurantAPI.Infrastructure.Persistence;
 using RestaurantAPI.Constants;
 
 namespace RestaurantAPI.Controllers

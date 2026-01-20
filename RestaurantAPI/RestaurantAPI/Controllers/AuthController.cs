@@ -2,8 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RestaurantAPI.DTOs;
-using RestaurantAPI.Models;
-using RestaurantAPI.Services;
+using RestaurantAPI.Domain.Entities;
+using RestaurantAPI.Application.Interfaces;
+using RestaurantAPI.Infrastructure.Persistence;
 using RestaurantAPI.Constants;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

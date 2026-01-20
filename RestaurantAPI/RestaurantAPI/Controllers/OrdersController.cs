@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.DTOs;
-using RestaurantAPI.Models;
+using RestaurantAPI.Domain.Entities;
 using RestaurantAPI.Constants;
 using RestaurantAPI.Helpers;
-using RestaurantAPI.Services;
+using RestaurantAPI.Application.Interfaces;
+using RestaurantAPI.Infrastructure.Persistence;
 using RestaurantAPI.Exceptions;
 using System.Security.Claims;
 

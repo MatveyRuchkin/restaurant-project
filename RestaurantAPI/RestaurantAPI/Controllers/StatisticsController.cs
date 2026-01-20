@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RestaurantAPI.Models;
+using RestaurantAPI.Domain.Entities;
+using RestaurantAPI.Infrastructure.Persistence;
 
 namespace RestaurantAPI.Controllers
 {

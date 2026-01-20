@@ -1,6 +1,6 @@
 using AutoMapper;
 using RestaurantAPI.DTOs;
-using RestaurantAPI.Models;
+using RestaurantAPI.Domain.Entities;
 
 namespace RestaurantAPI.Mappings;
 
